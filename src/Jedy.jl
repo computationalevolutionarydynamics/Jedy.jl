@@ -41,13 +41,13 @@ copy(arg::Population) = Population(copy(arg.groups))
 
 # Finite population functions
 
-function fitness(pop::Population, payoffMatrix::Array{Real,2})
+function fitness{T}(pop::Population, payoffMatrix::Array{T,2})
     fitnessVector = payoffMatrix * pop.groups
     fitnessVector -= diag(payoffMatrix)
     fitnessVector /= pop.totalPop - 1
 end
 
-function reproductionProbability(pop::Population, payoffMatrix::Array{Real,2})
+function reproductionProbability{T}(pop::Population, payoffMatrix::Array{T,2})
     fitnessVector = fitness(pop, payoffMatrix)
     probVector = fitnessVector .* pop.groups
     probVector /= fitnessVector ⋅ pop.groups
