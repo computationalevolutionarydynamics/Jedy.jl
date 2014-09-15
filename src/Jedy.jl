@@ -10,7 +10,7 @@ type Population
 
     function Population(groups::Array{Int64, 1}, totalPop::Int64)
         if sum(groups) != totalPop
-            error("total population does not match sum of population vector")
+            throw(ArgumentError("total population does not match sum of population vector"))
         else
             return new(groups, totalPop)
         end
@@ -77,7 +77,6 @@ function moranProcessStep!(process::MoranProcess)
     if offspringGroup != deathGroup
         process.population.groups[offspringGroup] += 1
         process.population.groups[deathGroup] -= 1
-
     end
 
     return process
@@ -87,7 +86,7 @@ end
 
 function sampleFromPDF(probabilities::Array{Float64})
     if sum(probabilities) != 1
-      error("probabilities must add to 1")
+      throw(ArgumentError("probabilities must add to 1"))
     else
         # Generate a random number
         randNum = rand()
