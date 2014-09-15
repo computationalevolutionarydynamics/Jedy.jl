@@ -11,6 +11,10 @@ type Population
     function Population(groups::Array{Int64, 1}, totalPop::Int64)
         if sum(groups) != totalPop
             throw(ArgumentError("total population does not match sum of population vector"))
+        elseif totalPop == 0
+            throw(ArgumentError("population must be nonzero"))
+        elseif abs(groups) != groups
+            throw(ArgumentError("groups must be positive integers"))
         else
             return new(groups, totalPop)
         end
