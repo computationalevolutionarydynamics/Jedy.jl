@@ -48,3 +48,22 @@ function reproductionProbability(pop::Population, payoffMatrix::Array{Float64,2}
     probVector = fitnessVector .* pop.groups
     probVector /= fitnessVector ⋅ pop.groups
 end
+
+# Helper methods
+
+function sampleFromPopulations(probabilities::Array{Float64})
+    if sum(probabilities) != 1
+      error("probabilities must add to 1")
+    else
+        # Generate a random number
+        randNum = rand()
+        # Loop over elements of the input array
+        for i = 1:length(probabilities)
+            # Select the first value of i for which the random number is less
+            # than the discrete CDF
+            if randNum < sum(probabilities[1:i])
+                return i
+            end
+        end
+    end
+end
