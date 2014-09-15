@@ -49,9 +49,43 @@ function reproductionProbability(pop::Population, payoffMatrix::Array{Float64,2}
     probVector /= fitnessVector ⋅ pop.groups
 end
 
+function moranProcessStep!(process::MoranProcess)
+    # Get the reproduction probability distribution
+    reproductionProbs = reproductionProbability(process.population, process.payoffStructure)
+
+    # Select the group that will reproduce
+    reproductionGroup = sampleFromPDF(reproductionProbs)
+
+    # Decide whether the offspring will mutate
+    # Generate a vector where each element is the mutation rate
+    mutationVector = [process.mutationRate for _ = 1:length(process.population)]
+
+    # Set the proability that the population doesn't mutate so that the probabilities sum to 1
+    mutationVector[reproductionGroup] = 1 - process.mutationRate - sum(mutationVector)
+
+    # Sample from the mutation vector
+    offspringGroup = sampleFromPDF(mutationVector)
+
+    # Figure out the death probabilities
+    deathProbs = process.population.groups / process.population.totalPop
+
+    # Figure out the death group
+    deathGroup = sampleFromPDF(deathProbs)
+
+    # Update the population
+    # If the offspringGroup = deathGroup, nothing happens
+    if offspringGroup != deathGroup
+        process.population.groups[offspringGroup] += 1
+        process.population.groups[deathGroup] -= 1
+
+    end
+
+    return process
+end
+
 # Helper methods
 
-function sampleFromPopulations(probabilities::Array{Float64})
+function sampleFromPDF(probabilities::Array{Float64})
     if sum(probabilities) != 1
       error("probabilities must add to 1")
     else
