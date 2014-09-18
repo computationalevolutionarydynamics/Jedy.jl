@@ -98,6 +98,25 @@ function generateTimeSeries(iterations::Int64, process::MoranProcess)
     return timeSeries
 end
 
+function generateStationaryDistribution(iterations::Int64, process::MoranProcess)
+
+    stationaryDist = Array(Int64, length(process.population.groups))
+
+    timeSeries = generateTimeSeries(iterations, process)
+    for i in 1:size(timeSeries, 1)
+        for j in 1:size(timeSeries, 2)
+            if timeSeries[i, j] == process.population.totalPop
+                stationaryDist[j] += 1
+            end
+        end
+    end
+
+    # Divide by the number of entries
+    stationaryDist /= sum(stationaryDist)
+end
+
+
+
 # Helper methods
 
 function sampleFromPDF(probabilities::Array{Float64})
