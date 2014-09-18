@@ -65,7 +65,7 @@ function moranProcessStep!(process::MoranProcess)
     mutationVector = [process.mutationRate for _ = 1:length(process.population.groups)]
 
     # Set the proability that the population doesn't mutate so that the probabilities sum to 1
-    mutationVector[reproductionGroup] = 1 - process.mutationRate - sum(mutationVector)
+    mutationVector[reproductionGroup] = 1 - sum(mutationVector) + process.mutationRate
 
     # Sample from the mutation vector
     offspringGroup = sampleFromPDF(mutationVector)
