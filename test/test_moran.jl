@@ -1,12 +1,11 @@
 module TestMoran
 using Optim
 using Base.Test
-include("../src/Jedy.jl")
 
-# Define a custom error handler to give formatted success or failures
-customHandler(r::Test.Success) = print_with_color(:green, "Success on $(r.expr)\n")
-customHandler(r::Test.Failure) = error("$(r.expr)")
-customHandler(r::Test.Error) = rethrow(r)
+# Include our custom test handler
+include("customTestHandler.jl")
+
+include("../src/Jedy.jl")
 
 Test.with_handler(customHandler) do
 
