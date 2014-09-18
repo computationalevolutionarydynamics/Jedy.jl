@@ -86,6 +86,18 @@ function moranProcessStep!(process::MoranProcess)
     return process
 end
 
+function generateTimeSeries(iterations::Int64, process::MoranProcess)
+
+    # Set up a variable to hold the time series
+    timeSeries = Array(Int64, (iteration, length(process.population.groups)))
+
+    for i = 1:iterations
+        timeSeries[i] = moranProcessStep!(process)
+    end
+
+    return timeSeries
+end
+
 # Helper methods
 
 function sampleFromPDF(probabilities::Array{Float64})
