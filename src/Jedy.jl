@@ -41,13 +41,13 @@ copy(arg::Population) = Population(copy(arg.groups))
 
 # Finite population functions
 
-function fitness(pop::Population, payoffMatrix::Array{Real,2})
+function fitness{T<:Real}(pop::Population, payoffMatrix::Array{T,2})
     fitnessVector = payoffMatrix * pop.groups
     fitnessVector -= diag(payoffMatrix)
     fitnessVector /= pop.totalPop - 1
 end
 
-function reproductionProbability(pop::Population, payoffMatrix::Array{Real,2})
+function reproductionProbability{T<:Real}(pop::Population, payoffMatrix::Array{T,2})
     fitnessVector = fitness(pop, payoffMatrix)
     probVector = fitnessVector .* pop.groups
     probVector /= fitnessVector ⋅ pop.groups
@@ -115,7 +115,7 @@ function generateStationaryDistribution(iterations::Int64, process::MoranProcess
     stationaryDist /= sum(stationaryDist)
 end
 
-function computeFixationProbability(payoffMatrix::Array{Real,2}, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64)
+function computeFixationProbability{T<:Real}(payoffMatrix::Array{T,2}, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64)
     
     numGroups = size(payoffMatrix,1)
     gamma = zeros(Float64, totalPopSize - 1)
