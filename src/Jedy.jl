@@ -62,7 +62,7 @@ function moranProcessStep!(process::MoranProcess)
 
     # Decide whether the offspring will mutate
     # Generate a vector where each element is the mutation rate
-    mutationVector = [process.mutationRate for _ = 1:length(process.population)]
+    mutationVector = [process.mutationRate for _ = 1:length(process.population.groups)]
 
     # Set the proability that the population doesn't mutate so that the probabilities sum to 1
     mutationVector[reproductionGroup] = 1 - process.mutationRate - sum(mutationVector)
@@ -89,10 +89,10 @@ end
 function generateTimeSeries(iterations::Int64, process::MoranProcess)
 
     # Set up a variable to hold the time series
-    timeSeries = Array(Int64, (iteration, length(process.population.groups)))
+    timeSeries = Array(Int64, (iterations, length(process.population.groups)))
 
     for i = 1:iterations
-        timeSeries[i] = moranProcessStep!(process)
+        timeSeries[i,:] = moranProcessStep!(process).population.groups
     end
 
     return timeSeries
@@ -101,7 +101,7 @@ end
 # Helper methods
 
 function sampleFromPDF(probabilities::Array{Float64})
-    if sum(probabilities) != 1
+    if abs(sum(probabilities) - 1.0) > 1e-2
       throw(ArgumentError("probabilities must add to 1"))
     else
         # Generate a random number
