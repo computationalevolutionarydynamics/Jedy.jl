@@ -115,7 +115,66 @@ function generateStationaryDistribution(iterations::Int64, process::MoranProcess
     stationaryDist /= sum(stationaryDist)
 end
 
+function computeFixationProbability{T}(payoffMatrix::Array{T,2}, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64)
+    
+    numGroups = size(payoffMatrix,1)
+    gamma = zeros(Float64, totalPopSize - 1)
+            
+    # Loop over all the pop sizes
+    for k = 1:totalPopSize - 1
+            
+        # Generate the population
+        popArray = zeros(Int64, numGroups)
+        popArray[dominantPop] = totalPopSize - k
+        popArray[mutantPop] = k
+        pop = Population(popArray)
 
+        # Find the reproduction probabilities
+        reproductionProbs = reproductionProbability(pop, payoffMatrix)
+
+        # Figure out the probability of mutant decreasing and prob of mutant increasing
+        probDecrease = reproductionProbs[dominantPop] * k / totalPopSize
+        probIncrease = reproductionProbs[mutantPop] * (totalPopSize - k) / totalPopSize
+                
+        # Calculate gamma
+        gamma[k] = probDecrease/probIncrease
+    end
+            
+    # Now calculate the fixation probability
+    fixationProbability =  (1 + sum(map((x)->prod(gamma[1:x]),[1:mutantSize - 1]))) / (1 + sum(map((x)->prod(gamma[1:x]),[1:totalPopSize-1])))
+end
+
+function computeTransitionMatrix(process::MoranProcess)
+    
+    # Get the number of groups
+    numGroups = size(process.payoffStructure, 1)
+    
+    transitionMatrix = zeros(Float64, (numGroups,numGroups))
+    
+    # Loop over the groups
+    for i = 1:numGroups
+        
+        # Loop over the groups excluding the combination with itself
+        for j = [1:i-1, i+1:numGroups]
+            
+            transitionMatrix[i,j] = computeFixationProbability(process.payoffStructure, i, j, 1, process.population.totalPop)
+
+        end
+        
+        # Calculate the probability on the diagonal by ensuring that the matrix is stochastic
+        transitionMatrix[i, i] = 1 - sum(transitionMatrix[i, :])
+    end
+    
+    return transitionMatrix
+end
+
+function computeStationaryDistribution(process::MoranProcess)
+    
+    transitionMatrix = computeTransitionMatrix(process)
+    stationaryVector = abs(eig(transitionMatrix)[2][2,:])
+    stationaryVector /= sum(stationaryVector)
+    
+end
 
 # Helper methods
 
