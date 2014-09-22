@@ -29,7 +29,7 @@ type MoranProcess
     intensityOfSelectionMapping::Int
 
     function MoranProcess(population::Population, mutationRate::Float64, payoffStructure, intensityOfSelection::Real, intensityOfSelectionMapping::Int)
-        if intensityOfSelectionMapping != 1 and intensityOfSelectionMapping != 2
+        if (intensityOfSelectionMapping != 1) and (intensityOfSelectionMapping != 2)
             throw(ArgumentError("Invalid intensity of selection mapping type"))
         else
             return new(population, mutationRate, payoffStructure, intensityOfSelection, intensityOfSelectionMapping)
@@ -130,7 +130,8 @@ function generateStationaryDistribution(iterations::Int64, process::MoranProcess
     stationaryDist /= sum(stationaryDist)
 end
 
-function computeFixationProbability{T<:Real}(payoffMatrix::Array{T,2}, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64)
+function computeFixationProbability{T<:Real}(payoffMatrix::Array{T,2}, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64,
+                                            intensityOfSelection::T, intensityOfSelectionMappping::Int)
     
     numGroups = size(payoffMatrix,1)
     gamma = zeros(Float64, totalPopSize - 1)
@@ -145,7 +146,7 @@ function computeFixationProbability{T<:Real}(payoffMatrix::Array{T,2}, dominantP
         pop = Population(popArray)
 
         # Find the reproduction probabilities
-        reproductionProbs = reproductionProbability(pop, payoffMatrix)
+        reproductionProbs = reproductionProbability(pop, payoffMatrix, intensityOfSelection, intensityOfSelectionMapping)
 
         # Figure out the probability of mutant decreasing and prob of mutant increasing
         probDecrease = reproductionProbs[dominantPop] * k / totalPopSize
@@ -172,7 +173,8 @@ function computeTransitionMatrix(process::MoranProcess)
         # Loop over the groups excluding the combination with itself
         for j = [1:i-1, i+1:numGroups]
             
-            transitionMatrix[i,j] = computeFixationProbability(process.payoffStructure, i, j, 1, process.population.totalPop)
+            transitionMatrix[i,j] = computeFixationProbability(process.payoffStructure, i, j, 1, process.population.totalPop,
+                                                                process.intensityOfSelection, process.intensityOfSelectionMapping)
 
         end
         
