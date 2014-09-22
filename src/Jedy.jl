@@ -25,7 +25,14 @@ type MoranProcess
     population::Population
     mutationRate::Float64
     payoffStructure
-    intensityOfSelection::Float64
+    intensityOfSelection::Real
+    intensityOfSelectionMapping::Int
+
+    function MoranProcess(population::Population, mutationRate::Float64, payoffStructure, intensityOfSelection::Real, intensityOfSelectionMapping::Int)
+        if intensityOfSelectionMapping != 1 and intensityOfSelectionMapping != 2
+            throw(ArgumentError("Invalid intensity of selection mapping type"))
+        else
+            return new(population, mutationRate, payoffStructure, intensityOfSelection, intensityOfSelectionMapping)
 end
 
 # Constructors
@@ -41,21 +48,29 @@ copy(arg::Population) = Population(copy(arg.groups))
 
 # Finite population functions
 
-function fitness{T<:Real}(pop::Population, payoffMatrix::Array{T,2})
-    fitnessVector = payoffMatrix * pop.groups
-    fitnessVector -= diag(payoffMatrix)
+function fitness{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOfSelection::T, intensityOfSelectionMappping::Int)
+    if intensityOfSelectionMapping != 1 and intensityOfSelectionMapping != 2
+        throw(ArgumentError("Invalid intensity of selection mapping type"))
+    elseif intensityOfSelectionMapping == 1
+        mappedPayoff = linear_fitness_map(payoffMatrix, intensityOfSelection)
+    elseif intensityOfSelectionMapping == 2
+        mappedPayoff = exponential_fitness_map(payoffMatrix, intensityOfSelection)
+    end
+
+    fitnessVector = mappedPayoff * pop.groups
+    fitnessVector -= diag(mappedPayoff)
     fitnessVector /= pop.totalPop - 1
 end
 
-function reproductionProbability{T<:Real}(pop::Population, payoffMatrix::Array{T,2})
-    fitnessVector = fitness(pop, payoffMatrix)
+function reproductionProbability{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOfSelection::T, intensityOfSelectionMappping::Int)
+    fitnessVector = fitness(pop, payoffMatrix, intensityOfSelection, intensityOfSelectionMapping)
     probVector = fitnessVector .* pop.groups
     probVector /= fitnessVector ⋅ pop.groups
 end
 
 function moranProcessStep!(process::MoranProcess)
     # Get the reproduction probability distribution
-    reproductionProbs = reproductionProbability(process.population, process.payoffStructure)
+    reproductionProbs = reproductionProbability(process.population, process.payoffStructure, process.intensityOfSelection, process.intensityOfSelectionMapping)
 
     # Select the group that will reproduce
     reproductionGroup = sampleFromPDF(reproductionProbs)
