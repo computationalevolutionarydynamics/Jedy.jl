@@ -176,6 +176,18 @@ function computeStationaryDistribution(process::MoranProcess)
     
 end
 
+
+# Fitness mapping
+
+function exponential_fitness_map(payoff::Float64, intensityOfSelection::Float64)
+    exp(intensityOfSelection*payoff)
+end
+
+function linear_fitness_map(payoff::Float64, intensityOfSelection::Float64)
+    1 - intensityOfSelection + intensityOfSelection*payoff
+end
+
+
 # Helper methods
 
 function sampleFromPDF(probabilities::Array{Float64})
