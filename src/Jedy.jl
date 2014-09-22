@@ -26,13 +26,15 @@ type MoranProcess
     mutationRate::Float64
     payoffStructure
     intensityOfSelection::Real
-    intensityOfSelectionMapping::Int
+    intensityOfSelectionMap::Int
 
-    function MoranProcess(population::Population, mutationRate::Float64, payoffStructure, intensityOfSelection::Real, intensityOfSelectionMapping::Int)
-        if (intensityOfSelectionMapping != 1) and (intensityOfSelectionMapping != 2)
+    function MoranProcess(population::Population, mutationRate::Float64, payoffStructure, intensityOfSelection::Real, intensityOfSelectionMap::Int)
+        if (intensityOfSelectionMap != 1) && (intensityOfSelectionMap != 2)
             throw(ArgumentError("Invalid intensity of selection mapping type"))
         else
-            return new(population, mutationRate, payoffStructure, intensityOfSelection, intensityOfSelectionMapping)
+            return new(population, mutationRate, payoffStructure, intensityOfSelection, intensityOfSelectionMap)
+        end
+    end
 end
 
 # Constructors
@@ -48,12 +50,12 @@ copy(arg::Population) = Population(copy(arg.groups))
 
 # Finite population functions
 
-function fitness{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOfSelection::T, intensityOfSelectionMappping::Int)
-    if intensityOfSelectionMapping != 1 and intensityOfSelectionMapping != 2
+function fitness{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOfSelection::T, intensityOfSelectionMap::Int)
+    if (intensityOfSelectionMap != 1) && (intensityOfSelectionMap != 2)
         throw(ArgumentError("Invalid intensity of selection mapping type"))
-    elseif intensityOfSelectionMapping == 1
+    elseif intensityOfSelectionMap == 1
         mappedPayoff = linear_fitness_map(payoffMatrix, intensityOfSelection)
-    elseif intensityOfSelectionMapping == 2
+    elseif intensityOfSelectionMap == 2
         mappedPayoff = exponential_fitness_map(payoffMatrix, intensityOfSelection)
     end
 
@@ -62,15 +64,15 @@ function fitness{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOf
     fitnessVector /= pop.totalPop - 1
 end
 
-function reproductionProbability{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOfSelection::T, intensityOfSelectionMappping::Int)
-    fitnessVector = fitness(pop, payoffMatrix, intensityOfSelection, intensityOfSelectionMapping)
+function reproductionProbability{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOfSelection::T, intensityOfSelectionMap::Int)
+    fitnessVector = fitness(pop, payoffMatrix, intensityOfSelection, intensityOfSelectionMap)
     probVector = fitnessVector .* pop.groups
     probVector /= fitnessVector ⋅ pop.groups
 end
 
 function moranProcessStep!(process::MoranProcess)
     # Get the reproduction probability distribution
-    reproductionProbs = reproductionProbability(process.population, process.payoffStructure, process.intensityOfSelection, process.intensityOfSelectionMapping)
+    reproductionProbs = reproductionProbability(process.population, process.payoffStructure, process.intensityOfSelection, process.intensityOfSelectionMap)
 
     # Select the group that will reproduce
     reproductionGroup = sampleFromPDF(reproductionProbs)
@@ -131,7 +133,7 @@ function generateStationaryDistribution(iterations::Int64, process::MoranProcess
 end
 
 function computeFixationProbability{T<:Real}(payoffMatrix::Array{T,2}, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64,
-                                            intensityOfSelection::T, intensityOfSelectionMappping::Int)
+                                            intensityOfSelection::T, intensityOfSelectionMap::Int)
     
     numGroups = size(payoffMatrix,1)
     gamma = zeros(Float64, totalPopSize - 1)
@@ -146,7 +148,7 @@ function computeFixationProbability{T<:Real}(payoffMatrix::Array{T,2}, dominantP
         pop = Population(popArray)
 
         # Find the reproduction probabilities
-        reproductionProbs = reproductionProbability(pop, payoffMatrix, intensityOfSelection, intensityOfSelectionMapping)
+        reproductionProbs = reproductionProbability(pop, payoffMatrix, intensityOfSelection, intensityOfSelectionMap)
 
         # Figure out the probability of mutant decreasing and prob of mutant increasing
         probDecrease = reproductionProbs[dominantPop] * k / totalPopSize
@@ -174,7 +176,7 @@ function computeTransitionMatrix(process::MoranProcess)
         for j = [1:i-1, i+1:numGroups]
             
             transitionMatrix[i,j] = computeFixationProbability(process.payoffStructure, i, j, 1, process.population.totalPop,
-                                                                process.intensityOfSelection, process.intensityOfSelectionMapping)
+                                                                process.intensityOfSelection, process.intensityOfSelectionMap)
 
         end
         
@@ -227,3 +229,5 @@ function sampleFromPDF(probabilities::Array{Float64})
         end
     end
 end
+
+
