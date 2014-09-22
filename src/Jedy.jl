@@ -179,13 +179,17 @@ end
 
 # Fitness mapping
 
-function exponential_fitness_map(payoff::Float64, intensityOfSelection::Float64)
-    exp(intensityOfSelection*payoff)
-end
+# Array value
+exponential_fitness_map{T<:Real}(payoff::Array{T}, intensityOfSelection::T) = exp(intensityOfSelection*payoff)
 
-function linear_fitness_map(payoff::Float64, intensityOfSelection::Float64)
-    1 - intensityOfSelection + intensityOfSelection*payoff
-end
+# Single value
+exponential_fitness_map{T<:Real}(payoff::T, intensityOfSelection::T) = exp(intensityOfSelection*payoff)
+
+# Array value
+linear_fitness_map{T<:Real}(payoff::Array{T}, intensityOfSelection::T) = 1 - intensityOfSelection + intensityOfSelection*payoff
+
+# Single value
+linear_fitness_map{T<:Real}(payoff::T, intensityOfSelection::T) = 1 - intensityOfSelection + intensityOfSelection*payoff
 
 
 # Helper methods
