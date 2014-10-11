@@ -28,8 +28,8 @@ type MoranProcess
     intensityOfSelection::Real
     intensityOfSelectionMap::Int
 
-    function MoranProcess(population::Population, mutationRate::Float64, payoffStructure, intensityOfSelection::Real, intensityOfSelectionMap::Int)
-        if (intensityOfSelectionMap != 1) && (intensityOfSelectionMap != 2)
+    function MoranProcess(population::Population, mutationRate::Float64, payoffStructure, intensityOfSelection::Real, intensityOfSelectionMap::"ASCIIString")
+        if (intensityOfSelectionMap != "lin") && (intensityOfSelectionMap != "exp")
             throw(ArgumentError("Invalid intensity of selection mapping type"))
         else
             return new(population, mutationRate, payoffStructure, intensityOfSelection, intensityOfSelectionMap)
@@ -50,12 +50,12 @@ copy(arg::Population) = Population(copy(arg.groups))
 
 # Finite population functions
 
-function fitness{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOfSelection::T, intensityOfSelectionMap::Int)
-    if (intensityOfSelectionMap != 1) && (intensityOfSelectionMap != 2)
+function fitness{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
+    if (intensityOfSelectionMap != "lin") && (intensityOfSelectionMap != "exp")
         throw(ArgumentError("Invalid intensity of selection mapping type"))
-    elseif intensityOfSelectionMap == 1
+    elseif intensityOfSelectionMap == "lin"
         mappedPayoff = linear_fitness_map(payoffMatrix, intensityOfSelection)
-    elseif intensityOfSelectionMap == 2
+    elseif intensityOfSelectionMap == "exp"
         mappedPayoff = exponential_fitness_map(payoffMatrix, intensityOfSelection)
     end
 
