@@ -119,10 +119,13 @@ function estimateStationaryDistribution(iterations::Int64, process::MoranProcess
 
     stationaryDist = Array(Int64, length(process.population.groups))
 
-    timeSeries = estimateTimeSeries(iterations, process)
+    # Take a copy of the process to avoid destroying the original
+    copyOfProcess = copy(process)
+
+    timeSeries = estimateTimeSeries(iterations, copyOfProcess)
     for i in 1:size(timeSeries, 1)
         for j in 1:size(timeSeries, 2)
-            if timeSeries[i, j] == process.population.totalPop
+            if timeSeries[i, j] == copyOfProcess.population.totalPop
                 stationaryDist[j] += 1
             end
         end
