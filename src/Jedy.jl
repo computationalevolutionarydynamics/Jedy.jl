@@ -26,9 +26,9 @@ type MoranProcess
     mutationRate::Float64
     payoffStructure
     intensityOfSelection::Real
-    intensityOfSelectionMap::Int
+    intensityOfSelectionMap::ASCIIString
 
-    function MoranProcess(population::Population, mutationRate::Float64, payoffStructure, intensityOfSelection::Real, intensityOfSelectionMap::"ASCIIString")
+    function MoranProcess(population::Population, mutationRate::Float64, payoffStructure, intensityOfSelection::Real, intensityOfSelectionMap::ASCIIString)
         if (intensityOfSelectionMap != "lin") && (intensityOfSelectionMap != "exp")
             throw(ArgumentError("Invalid intensity of selection mapping type"))
         else
@@ -64,7 +64,7 @@ function fitness{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOf
     fitnessVector /= pop.totalPop - 1
 end
 
-function reproductionProbability{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOfSelection::T, intensityOfSelectionMap::Int)
+function reproductionProbability{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
     fitnessVector = fitness(pop, payoffMatrix, intensityOfSelection, intensityOfSelectionMap)
     probVector = fitnessVector .* pop.groups
     probVector /= fitnessVector ⋅ pop.groups
@@ -133,7 +133,7 @@ function estimateStationaryDistribution(iterations::Int64, process::MoranProcess
 end
 
 function computeFixationProbability{T<:Real}(payoffMatrix::Array{T,2}, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64,
-                                            intensityOfSelection::T, intensityOfSelectionMap::Int)
+                                            intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
     
     numGroups = size(payoffMatrix,1)
     gamma = zeros(Float64, totalPopSize - 1)
