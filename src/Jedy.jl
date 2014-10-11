@@ -48,6 +48,8 @@ end
 
 copy(arg::Population) = Population(copy(arg.groups))
 
+copy(arg::MoranProcess) = MoranProcess(copy(arg.population), arg.mutationRate, arg.payoffStructure, arg.intensityOfSelection, arg.intensityOfSelectionMap)
+
 # Finite population functions
 
 function fitness{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
