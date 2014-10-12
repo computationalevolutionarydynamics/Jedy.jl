@@ -29,10 +29,10 @@ type MoranProcess
     mutationRate::Float64
     payoffStructure
     intensityOfSelection::Real
-    intensityOfSelectionMap::Int
+    intensityOfSelectionMap::ASCIIString
 
-    function MoranProcess(population::Population, mutationRate::Float64, payoffStructure, intensityOfSelection::Real, intensityOfSelectionMap::Int)
-        if (intensityOfSelectionMap != 1) && (intensityOfSelectionMap != 2)
+    function MoranProcess(population::Population, mutationRate::Float64, payoffStructure, intensityOfSelection::Real, intensityOfSelectionMap::ASCIIString)
+        if (intensityOfSelectionMap != "lin") && (intensityOfSelectionMap != "exp")
             throw(ArgumentError("Invalid intensity of selection mapping type"))
         else
             return new(population, mutationRate, payoffStructure, intensityOfSelection, intensityOfSelectionMap)
@@ -51,14 +51,16 @@ end
 
 copy(arg::Population) = Population(copy(arg.groups))
 
+copy(arg::MoranProcess) = MoranProcess(copy(arg.population), arg.mutationRate, arg.payoffStructure, arg.intensityOfSelection, arg.intensityOfSelectionMap)
+
 # Finite population functions
 
-function fitness{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOfSelection::T, intensityOfSelectionMap::Int)
-    if (intensityOfSelectionMap != 1) && (intensityOfSelectionMap != 2)
+function fitness{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
+    if (intensityOfSelectionMap != "lin") && (intensityOfSelectionMap != "exp")
         throw(ArgumentError("Invalid intensity of selection mapping type"))
-    elseif intensityOfSelectionMap == 1
+    elseif intensityOfSelectionMap == "lin"
         mappedPayoff = linear_fitness_map(payoffMatrix, intensityOfSelection)
-    elseif intensityOfSelectionMap == 2
+    elseif intensityOfSelectionMap == "exp"
         mappedPayoff = exponential_fitness_map(payoffMatrix, intensityOfSelection)
     end
 
@@ -67,7 +69,7 @@ function fitness{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOf
     fitnessVector /= pop.totalPop - 1
 end
 
-function reproductionProbability{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOfSelection::T, intensityOfSelectionMap::Int)
+function reproductionProbability{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
     fitnessVector = fitness(pop, payoffMatrix, intensityOfSelection, intensityOfSelectionMap)
     probVector = fitnessVector .* pop.groups
     probVector /= fitnessVector ⋅ pop.groups
@@ -106,10 +108,10 @@ function moranProcessStep!(process::MoranProcess)
     return process
 end
 
-function generateTimeSeries(iterations::Int64, process::MoranProcess)
+function estimateTimeSeries(iterations::Int64, process::MoranProcess)
 
     # Set up a variable to hold the time series
-    timeSeries = Array(Int64, (iterations, length(process.population.groups)))
+    timeSeries = zeros(Int64, (iterations, length(process.population.groups)))
 
     for i = 1:iterations
         timeSeries[i,:] = moranProcessStep!(process).population.groups
@@ -118,14 +120,17 @@ function generateTimeSeries(iterations::Int64, process::MoranProcess)
     return timeSeries
 end
 
-function generateStationaryDistribution(iterations::Int64, process::MoranProcess)
+function estimateStationaryDistribution(iterations::Int64, process::MoranProcess)
 
-    stationaryDist = Array(Int64, length(process.population.groups))
+    stationaryDist = zeros(Int64, length(process.population.groups))
 
-    timeSeries = generateTimeSeries(iterations, process)
+    # Take a copy of the process to avoid destroying the original
+    copyOfProcess = copy(process)
+
+    timeSeries = estimateTimeSeries(iterations, copyOfProcess)
     for i in 1:size(timeSeries, 1)
         for j in 1:size(timeSeries, 2)
-            if timeSeries[i, j] == process.population.totalPop
+            if timeSeries[i, j] == copyOfProcess.population.totalPop
                 stationaryDist[j] += 1
             end
         end
@@ -136,7 +141,7 @@ function generateStationaryDistribution(iterations::Int64, process::MoranProcess
 end
 
 function computeFixationProbability{T<:Real}(payoffMatrix::Array{T,2}, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64,
-                                            intensityOfSelection::T, intensityOfSelectionMap::Int)
+                                            intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
 
     numGroups = size(payoffMatrix,1)
     gamma = zeros(Float64, totalPopSize - 1)
