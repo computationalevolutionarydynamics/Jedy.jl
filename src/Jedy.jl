@@ -108,7 +108,7 @@ end
 function estimateTimeSeries(iterations::Int64, process::MoranProcess)
 
     # Set up a variable to hold the time series
-    timeSeries = Array(Int64, (iterations, length(process.population.groups)))
+    timeSeries = zeros(Int64, (iterations, length(process.population.groups)))
 
     for i = 1:iterations
         timeSeries[i,:] = moranProcessStep!(process).population.groups
@@ -119,7 +119,7 @@ end
 
 function estimateStationaryDistribution(iterations::Int64, process::MoranProcess)
 
-    stationaryDist = Array(Int64, length(process.population.groups))
+    stationaryDist = zeros(Int64, length(process.population.groups))
 
     # Take a copy of the process to avoid destroying the original
     copyOfProcess = copy(process)
