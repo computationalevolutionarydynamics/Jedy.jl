@@ -50,6 +50,10 @@ function Population(groups::Array{Int64, 1}, labels)
     return Population(groups, labels, totalPop)
 end
 
+function Population(groups::Array{Int64,1})
+    return Population(groups, ["", "", ""])
+end
+
 # Copy methods
 
 copy(arg::Population) = Population(copy(arg.groups), copy(arg.labels))
