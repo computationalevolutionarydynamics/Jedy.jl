@@ -9,10 +9,10 @@ using ODE: ode23, ode45
 
 type Population
     groups::Array{Int64, 1}
-    labels
+    labels::Array{ASCIIString, 1}
     totalPop::Int64
 
-    function Population(groups::Array{Int64, 1}, labels, totalPop::Int64)
+    function Population(groups::Array{Int64, 1}, labels::Array{ASCIIString, 1}, totalPop::Int64)
         if sum(groups) != totalPop
             throw(ArgumentError("total population does not match sum of population vector"))
         elseif totalPop == 0
@@ -45,7 +45,7 @@ end
 
 # Constructors
 
-function Population(groups::Array{Int64, 1}, labels)
+function Population(groups::Array{Int64, 1}, labels::Array{ASCIIString, 1})
     totalPop = sum(groups)
     return Population(groups, labels, totalPop)
 end
