@@ -129,6 +129,27 @@ function generateTimeSeries(iterations::Int64, process::MoranProcess)
     return timeSeries
 end
 
+function generateStateHeatmap(iterations::Int64, process::MoranProcess)
+
+    # If the process's population doesn't have three groups, raise an error
+    if length(process.population.groups) != 3
+        throw(ArgumentError("Number of groups exceeds three and cannot be displayed as a 2D heatmap"))
+    end
+
+    # Create an empty array to hold the values
+    heatmap = zeros(Int64, (process.population.totalPop + 1, process.population.totalPop + 1))
+
+    # Generate the timeseries
+    timeSeries = generateTimeSeries(iterations, process)
+
+    # Loop over the lines in the timeseries and add corresponding entries in the matrix
+    for i in 1:size(timeSeries, 1)
+        heatmap[timeSeries[i,1] + 1, timeSeries[i,2] + 1] += 1 
+    end
+
+    return heatmap
+end
+
 function estimateStationaryDistribution(iterations::Int64, process::MoranProcess)
 
     stationaryDist = zeros(Int64, length(process.population.groups))
