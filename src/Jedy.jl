@@ -9,17 +9,20 @@ using ODE: ode23, ode45
 
 type Population
     groups::Array{Int64, 1}
+    labels
     totalPop::Int64
 
-    function Population(groups::Array{Int64, 1}, totalPop::Int64)
+    function Population(groups::Array{Int64, 1}, labels, totalPop::Int64)
         if sum(groups) != totalPop
             throw(ArgumentError("total population does not match sum of population vector"))
         elseif totalPop == 0
             throw(ArgumentError("population must be nonzero"))
         elseif abs(groups) != groups
             throw(ArgumentError("groups must be positive integers"))
+        elseif size(labels) != size(groups)
+            throw(ArgumentError("number of labels must match number of groups"))
         else
-            return new(groups, totalPop)
+            return new(groups, labels, totalPop)
         end
     end
 end
@@ -42,14 +45,14 @@ end
 
 # Constructors
 
-function Population(groups::Array{Int64, 1})
+function Population(groups::Array{Int64, 1}, labels)
     totalPop = sum(groups)
-    return Population(groups, totalPop)
+    return Population(groups, labels, totalPop)
 end
 
 # Copy methods
 
-copy(arg::Population) = Population(copy(arg.groups))
+copy(arg::Population) = Population(copy(arg.groups), copy(arg.labels))
 
 copy(arg::MoranProcess) = MoranProcess(copy(arg.population), arg.mutationRate, arg.payoffStructure, arg.intensityOfSelection, arg.intensityOfSelectionMap)
 
