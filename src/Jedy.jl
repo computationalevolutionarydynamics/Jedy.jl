@@ -56,7 +56,9 @@ copy(arg::Population) = Population(copy(arg.groups), copy(arg.labels))
 
 copy(arg::MoranProcess) = MoranProcess(copy(arg.population), arg.mutationRate, arg.payoffStructure, arg.intensityOfSelection, arg.intensityOfSelectionMap)
 
-# Finite population functions
+#####################################################################
+# Finite population 
+#####################################################################
 
 function fitness{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
     if (intensityOfSelectionMap != "lin") && (intensityOfSelectionMap != "exp")
@@ -240,6 +242,10 @@ function sampleFromPDF(probabilities::Array{Float64})
         end
     end
 end
+
+########################################################
+# Infinite population methods
+#######################################################
 
 function replicator{T<:Real}(timeRange::Any, frequency::Array{T,1}, game::Array{T,2};mutationProbs = [0 0 0; 0 0 0; 0 0 0])
 
