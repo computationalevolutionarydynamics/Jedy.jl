@@ -51,7 +51,7 @@ function Population(groups::Array{Int64, 1}, labels::Array{ASCIIString, 1})
 end
 
 function Population(groups::Array{Int64,1})
-    return Population(groups, ["", "", ""])
+    return Population(groups, ["" for i in 1:length(groups)])
 end
 
 # Copy methods
