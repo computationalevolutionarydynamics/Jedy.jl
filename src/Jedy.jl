@@ -37,9 +37,17 @@ type MoranProcess
     function MoranProcess(population::Population, mutationRate::Float64, payoffStructure, intensityOfSelection::Real, intensityOfSelectionMap::ASCIIString)
         if (intensityOfSelectionMap != "lin") && (intensityOfSelectionMap != "exp")
             throw(ArgumentError("Invalid intensity of selection mapping type"))
-        else
-            return new(population, mutationRate, payoffStructure, intensityOfSelection, intensityOfSelectionMap)
         end
+        if typeof(payoffStructure) <: Array
+            # If the payoff matrix has negative values, we want to remap those values to positve values
+            # The method by which this is done is likely to change
+            if abs(payoffStructure) != payoffStructure
+                print("Negative payoffs have caused all payoffs to be translated to zero")
+                payoffStructure += abs(minimum(payoffStructure))
+            end
+        end
+
+        return new(population, mutationRate, payoffStructure, intensityOfSelection, intensityOfSelectionMap)
     end
 end
 
