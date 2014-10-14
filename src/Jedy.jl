@@ -41,9 +41,8 @@ type MoranProcess
         if typeof(payoffStructure) <: Array
             # If the payoff matrix has negative values, we want to remap those values to positve values
             # The method by which this is done is likely to change
-            if abs(payoffStructure) != payoffStructure
-                print("Negative payoffs have caused all payoffs to be translated to zero")
-                payoffStructure += abs(minimum(payoffStructure))
+            if (abs(payoffStructure) != payoffStructure) && (intensityOfSelectionMap == "lin")
+                throw(ArgumentError(("Negative payoffs cannot be used with linear intensity of selection mapping")))
             end
         end
 
