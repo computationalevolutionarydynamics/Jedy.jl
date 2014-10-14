@@ -319,6 +319,8 @@ function sampleFromPDF(probabilities::Array{Float64})
     end
 end
 
+# Plotting related methods
+
 ########################################################
 # Infinite population methods
 #######################################################
