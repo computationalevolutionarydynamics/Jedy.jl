@@ -129,6 +129,28 @@ function generateTimeSeries(iterations::Int64, process::MoranProcess)
     return timeSeries
 end
 
+function generateStateHistogram(iterations::Int64, process::MoranProcess)
+
+    # If the process's population doesn't have exactly two groups, throw an error
+    if length(process.population.groups) != 2
+        throw(ArgumentError("Number of groups is not two and cannot be displayed as a histogram"))
+    end
+
+    # Create an empty array
+    histogram = zeros(Int64, process.population.totalPop + 1)
+
+    # Generate the timeseries
+    timeSeries = generateTimeSeries(iterations, process)
+
+    # Loop over the lines in the timeseries and add entries in the histogram
+    for i in 1:size(timeSeries, 1)
+        histogram[timeSeries[i,1] + 1] += 1
+    end
+
+    return histogram
+
+end
+
 function generateStateHeatmap(iterations::Int64, process::MoranProcess)
 
     # If the process's population doesn't have three groups, raise an error
