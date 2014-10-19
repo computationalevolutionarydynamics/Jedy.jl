@@ -295,7 +295,7 @@ end
 function computeTransitionMatrix(process::MoranProcess)
 
     # Get the number of groups
-    numGroups = length(process.population.groups, 1)
+    numGroups = length(process.population.groups)
 
     transitionMatrix = zeros(Float64, (numGroups,numGroups))
 
