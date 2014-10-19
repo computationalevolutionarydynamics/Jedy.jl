@@ -75,13 +75,9 @@ end
 
 # Constructors
 
-function Population(groups::Array{Int64, 1}, labels::Array{ASCIIString, 1})
+function Population(groups::Array{Int64, 1})
     totalPop = sum(groups)
-    return Population(groups, labels, totalPop)
-end
-
-function Population(groups::Array{Int64,1})
-    return Population(groups, ["" for i in 1:length(groups)])
+    return Population(groups, totalPop)
 end
 
 function NormalGame(players::Int64, strategies, payoffFunctions::Array{Function,1})
@@ -106,7 +102,7 @@ end
 
 # Copy methods
 
-copy(arg::Population) = Population(copy(arg.groups), copy(arg.labels))
+copy(arg::Population) = Population(copy(arg.groups))
 
 copy(arg::MoranProcess) = MoranProcess(copy(arg.population), arg.mutationRate, arg.payoffStructure, arg.intensityOfSelection, arg.intensityOfSelectionMap)
 
