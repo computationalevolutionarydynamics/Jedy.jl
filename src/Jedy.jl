@@ -324,6 +324,16 @@ function computeStationaryDistribution(process::MoranProcess)
 
 end
 
+function computeIntensityEffect(process::MoranProcess, intensityStart, intensityEnd, intensityStep)
+
+    intensityValues = intensityStart:intensityStep:intensityEnd
+    stationaryDists = Array(Float64, (length(intensityValues), length(process.population.groups)))
+    for i in 1:length(intensityValues)
+        intensity = intensityValues[i]
+        stationaryDists[i,:] = computeStationaryDistribution(MoranProcess(process.population, 1e-3, dilemmaGame, intensity, "lin"))
+    end
+    return stationaryDists
+end
 
 
 # Fitness mapping
