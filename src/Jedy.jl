@@ -95,7 +95,7 @@ function NormalGame(players::Int64, strategies, payoffFunctions::Array{Function,
     counter = 0
     for i in 1:size(strategies,1)
         list = {}
-        for j in 1:size(strategies[i])
+        for j in 1:length(strategies[i])
             counter += 1
             # Generate a label S<num> for each strategy
             label = string("S", string(counter))
