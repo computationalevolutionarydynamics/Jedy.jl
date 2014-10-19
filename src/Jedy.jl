@@ -112,7 +112,7 @@ function fitness{T<:Real}(pop::Population, payoffFunctions, intensityOfSelection
         mappingFunction = exponential_fitness_map
     end
 
-    fitnessVector = {}
+    fitnessVector = Array(Float64, length(pop.groups))
     for i in 1:length(pop.groups)
         fit = 0
         for j = 1:length(pop.groups)
@@ -122,8 +122,7 @@ function fitness{T<:Real}(pop::Population, payoffFunctions, intensityOfSelection
             end
         end
         fit /= pop.totalPop - 1
-        push!(fitnessVector,fit)
-        fitnessVector[i] = mappingFunction(fitnessVector[i], intensityOfSelection)
+        fitnessVector[i] = mappingFunction(fit, intensityOfSelection)
     end
     return fitnessVector
 end
