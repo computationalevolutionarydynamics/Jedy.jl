@@ -9,20 +9,17 @@ using ODE: ode23, ode45
 
 type Population
     groups::Array{Int64, 1}
-    labels::Array{ASCIIString, 1}
     totalPop::Int64
 
-    function Population(groups::Array{Int64, 1}, labels::Array{ASCIIString, 1}, totalPop::Int64)
+    function Population(groups::Array{Int64, 1}, totalPop::Int64)
         if sum(groups) != totalPop
             throw(ArgumentError("total population does not match sum of population vector"))
         elseif totalPop == 0
             throw(ArgumentError("population must be nonzero"))
         elseif abs(groups) != groups
             throw(ArgumentError("groups must be positive integers"))
-        elseif size(labels) != size(groups)
-            throw(ArgumentError("number of labels must match number of groups"))
         else
-            return new(groups, labels, totalPop)
+            return new(groups, totalPop)
         end
     end
 end
