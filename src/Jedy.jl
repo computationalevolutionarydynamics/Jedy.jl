@@ -296,7 +296,7 @@ end
 function computeTransitionMatrix(process::MoranProcess)
 
     # Get the number of groups
-    numGroups = size(process.payoffStructure, 1)
+    numGroups = length(process.population.groups, 1)
 
     transitionMatrix = zeros(Float64, (numGroups,numGroups))
 
@@ -306,7 +306,7 @@ function computeTransitionMatrix(process::MoranProcess)
         # Loop over the groups excluding the combination with itself
         for j = [1:i-1, i+1:numGroups]
 
-            transitionMatrix[i,j] = computeFixationProbability(process.payoffStructure, i, j, 1, process.population.totalPop,
+            transitionMatrix[i,j] = computeFixationProbability(process.game.payoffFunctions, i, j, 1, process.population.totalPop,
                                                                 process.intensityOfSelection, process.intensityOfSelectionMap)
 
         end
