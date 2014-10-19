@@ -304,8 +304,7 @@ function computeTransitionMatrix(process::MoranProcess)
         # Loop over the groups excluding the combination with itself
         for j = [1:i-1, i+1:numGroups]
 
-            transitionMatrix[i,j] = computeFixationProbability(numGroups, process.game.payoffFunctions, i, j, 1, process.population.totalPop,
-                                                                process.intensityOfSelection, process.intensityOfSelectionMap)
+            transitionMatrix[i,j] = computeFixationProbability(numGroups, process.game.payoffFunctions, i, j, 1, process.population.totalPop, process.intensityOfSelection, process.intensityOfSelectionMap)
 
         end
 
