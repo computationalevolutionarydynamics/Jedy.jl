@@ -129,7 +129,7 @@ function fitness{T<:Real}(pop::Population, payoffFunctions, intensityOfSelection
 end
 
 function reproductionProbability{T<:Real}(pop::Population, payoffFunctions, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
-    fitnessVector = fitness(pop, payofFunctions, intensityOfSelection, intensityOfSelectionMap)
+    fitnessVector = fitness(pop, payoffFunctions, intensityOfSelection, intensityOfSelectionMap)
     probVector = fitnessVector .* pop.groups
     probVector /= fitnessVector ⋅ pop.groups
 end
