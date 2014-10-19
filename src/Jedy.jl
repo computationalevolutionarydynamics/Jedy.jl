@@ -263,9 +263,8 @@ function estimateStationaryDistribution(iterations::Int64, process::MoranProcess
     stationaryDist /= sum(stationaryDist)
 end
 
-function computeFixationProbability{T<:Real}(payoffFunctions, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
+function computeFixationProbability{T<:Real}(numGroups, payoffFunctions, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
 
-    numGroups = size(payoffMatrix,1)
     gamma = zeros(Float64, totalPopSize - 1)
 
     # Loop over all the pop sizes
@@ -305,7 +304,7 @@ function computeTransitionMatrix(process::MoranProcess)
         # Loop over the groups excluding the combination with itself
         for j = [1:i-1, i+1:numGroups]
 
-            transitionMatrix[i,j] = computeFixationProbability(process.game.payoffFunctions, i, j, 1, process.population.totalPop,
+            transitionMatrix[i,j] = computeFixationProbability(numGroups, process.game.payoffFunctions, i, j, 1, process.population.totalPop,
                                                                 process.intensityOfSelection, process.intensityOfSelectionMap)
 
         end
