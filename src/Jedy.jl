@@ -38,7 +38,7 @@ type NormalGame
         if size(strategies,1) != players
             throw(ArgumentError("number of players does not match size of strategies array"))
         # Check that the number of players matches the number of payoff functions
-        elseif size(payoffFunction,1) != players
+        elseif size(payoffFunctions,1) != players
             throw(ArgumentError("number of players does not match size of payoff function array"))
         else
             # Check that the size of each set matches the number of labels
