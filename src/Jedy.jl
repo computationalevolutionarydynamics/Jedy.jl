@@ -320,6 +320,12 @@ function computeStationaryDistribution(numGroups, payoffFunctions, totalPop, int
 
 end
 
+function computeStationaryDistribution(process::MoranProcess)
+
+    computeStationaryDistribution(length(process.population.groups), process.game.payoffFunctions, process.population.totalPop, process.intensityOfSelection, process.intensityOfSelectionMap)
+
+end
+
 function computeIntensityEffect(process::MoranProcess, intensityStart, intensityEnd, intensityStep)
 
     numGroups = length(process.population.groups)
