@@ -112,7 +112,7 @@ function fitness{T<:Real}(pop::Population, payoffFunctions, intensityOfSelection
         mappingFunction = exponential_fitness_map
     end
 
-    fitnessVector = {}
+    fitnessVector = Array(Float64, length(pop.groups))
     for i in 1:length(pop.groups)
         fit = 0
         for j = 1:length(pop.groups)
@@ -122,14 +122,13 @@ function fitness{T<:Real}(pop::Population, payoffFunctions, intensityOfSelection
             end
         end
         fit /= pop.totalPop - 1
-        push!(fitnessVector,fit)
-        fitnessVector[i] = mappingFunction(fitnessVector[i], intensityOfSelection)
+        fitnessVector[i] = mappingFunction(fit, intensityOfSelection)
     end
     return fitnessVector
 end
 
 function reproductionProbability{T<:Real}(pop::Population, payoffFunctions, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
-    fitnessVector = fitness(pop, payofFunctions, intensityOfSelection, intensityOfSelectionMap)
+    fitnessVector = fitness(pop, payoffFunctions, intensityOfSelection, intensityOfSelectionMap)
     probVector = fitnessVector .* pop.groups
     probVector /= fitnessVector ⋅ pop.groups
 end
@@ -264,9 +263,8 @@ function estimateStationaryDistribution(iterations::Int64, process::MoranProcess
     stationaryDist /= sum(stationaryDist)
 end
 
-function computeFixationProbability{T<:Real}(payoffFunctions, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
+function computeFixationProbability{T<:Real}(numGroups, payoffFunctions, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
 
-    numGroups = size(payoffMatrix,1)
     gamma = zeros(Float64, totalPopSize - 1)
 
     # Loop over all the pop sizes
@@ -293,10 +291,7 @@ function computeFixationProbability{T<:Real}(payoffFunctions, dominantPop::Int64
     fixationProbability =  (1 + sum(map((x)->prod(gamma[1:x]),[1:mutantSize - 1]))) / (1 + sum(map((x)->prod(gamma[1:x]),[1:totalPopSize-1])))
 end
 
-function computeTransitionMatrix(process::MoranProcess)
-
-    # Get the number of groups
-    numGroups = length(process.population.groups, 1)
+function computeTransitionMatrix(numGroups, payoffFunctions, totalPop, intensityOfSelection, intensityOfSelectionMap)
 
     transitionMatrix = zeros(Float64, (numGroups,numGroups))
 
@@ -306,8 +301,7 @@ function computeTransitionMatrix(process::MoranProcess)
         # Loop over the groups excluding the combination with itself
         for j = [1:i-1, i+1:numGroups]
 
-            transitionMatrix[i,j] = computeFixationProbability(process.game.payoffFunctions, i, j, 1, process.population.totalPop,
-                                                                process.intensityOfSelection, process.intensityOfSelectionMap)
+            transitionMatrix[i,j] = computeFixationProbability(numGroups, payoffFunctions, i, j, 1, totalPop, intensityOfSelection, intensityOfSelectionMap)
 
         end
 
@@ -318,14 +312,31 @@ function computeTransitionMatrix(process::MoranProcess)
     return transitionMatrix
 end
 
-function computeStationaryDistribution(process::MoranProcess)
+function computeStationaryDistribution(numGroups, payoffFunctions, totalPop, intensityOfSelection, intensityOfSelectionMap)
 
-    transitionMatrix = computeTransitionMatrix(process)
+    transitionMatrix = computeTransitionMatrix(numGroups, payoffFunctions, totalPop, intensityOfSelection, intensityOfSelectionMap)
     stationaryVector = abs(eig(transitionMatrix)[2][2,:])
     stationaryVector /= sum(stationaryVector)
 
 end
 
+function computeStationaryDistribution(process::MoranProcess)
+
+    computeStationaryDistribution(length(process.population.groups), process.game.payoffFunctions, process.population.totalPop, process.intensityOfSelection, process.intensityOfSelectionMap)
+
+end
+
+function computeIntensityEffect(process::MoranProcess, intensityStart, intensityEnd, intensityStep)
+
+    numGroups = length(process.population.groups)
+    intensityValues = intensityStart:intensityStep:intensityEnd
+    stationaryDists = Array(Float64, (length(intensityValues), length(process.population.groups)))
+    for i in 1:length(intensityValues)
+        intensity = intensityValues[i]
+        stationaryDists[i,:] = computeStationaryDistribution(numGroups, process.game.payoffFunctions, process.population.totalPop, intensity, process.intensityOfSelectionMap)
+    end
+    return stationaryDists
+end
 
 
 # Fitness mapping
