@@ -392,18 +392,6 @@ function replicator{T<:Real}(timeRange::Any, frequency::Array{T,1}, game::Array{
     return frequency .* (fitness - averageFitness)
 end
 
-function replicatorTest()
-    frequency = Float64[0.3; 0.7]
-    game = Float64[2 1; 3 -1]
-    derivative = replicator(0,frequency, game)
-    epsilon = 10^(-5.0)
-    if abs(derivative[1]  - 0.231) < epsilon && abs(derivative[2]  + 0.231) < epsilon
-        return "replicator works properly"
-    else
-        return "replicator isn't working"
-    end
-end
-
 function buildMutationMatrix{T<:Real}(μ::T,nStrategies::Int64)
     #build the matrix holding the mutation probabilities
     mutationProbs = fill(μ,(nStrategies,nStrategies))
@@ -415,13 +403,7 @@ function buildMutationMatrix{T<:Real}(μ::T,nStrategies::Int64)
     return mutationProbs
 end
 
-function testBuiltMutationMatrix()
-    if buildMutationMatrix(0.1,3) == [0.8 0.1 0.1; 0.1 0.8 0.1; 0.1 0.1 0.8]
-        return "builtMutationMatrix works"
-    else
-        return "builtMutationMatrix doesn't work"
-    end
-end
+
 
 function replicatorMutator{T<:Real}(timeRange::Any, frequency::Array{T,1},game::Array{T,2}; mutationProbs = [0 0 0; 0 0 0; 0 0 0])
     """
@@ -443,20 +425,7 @@ function replicatorMutator{T<:Real}(timeRange::Any, frequency::Array{T,1},game::
     return (mutationProbs * (frequency .* fitness)) - (averageFitness * frequency)
 end
 
-function replicatorMutatorTest()
-    frequency = Float64[0.3; 0.7]
-    game = Float64[2 1; 3 -1]
-    mutationProbs = [0.9 0.1; 0.1 0.9]
-    epsilon = 10^(-5.0)
-    derivative = replicatorMutator(false,frequency, game, mutationProbs = mutationProbs)
 
-    if abs(derivative[1]  - 0.206) < epsilon && abs(derivative[2]  + 0.206) < epsilon
-        return "replicator-mutator works properly"
-    else
-        return "replicator-mutator isn't working"
-    end
-
-end
 
 function considerMutation{T<:Real}(mutationProbs::Array{T,2}, μ::Float64, nStrategies::Int64)
 
@@ -509,7 +478,7 @@ function getTrajectory{T<:Real}(timeRange::Any,initialFrequency::Array{T,1},game
 
 end
 
-function twoStratsPhaseDiagram{T<:Real}(game::Array{T,2}; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, labels = ["S1", "S2"], step = 0.001)
+function twoStrategiesPhaseDiagram{T<:Real}(game::Array{T,2}; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, labels = ["S1", "S2"], step = 0.001)
 
     nStrategies = 2
 
@@ -588,14 +557,14 @@ function twoStratsPhaseDiagram{T<:Real}(game::Array{T,2}; mutationProbs = [0 0 0
     PyPlot.xlim(-0.2,1.2)
 end
 
-function threeStratsPhaseDiagram{T<:Real}(timeRange::Any, initialFrequency::Array{T,1}, game::Array{T,2}; mutationProbs =  [0 0 0; 0 0 0; 0 0 0], μ = 0.0, solver = ode23, labels = ["S1", "S2","S3"], internal = false)
+function plotThreeStrategiesPhaseDiagram{T<:Real}(timeRange::Any, initialFrequency::Array{T,1}, game::Array{T,2}; mutationProbs =  [0 0 0; 0 0 0; 0 0 0], μ = 0.0, solver = ode23, labels = ["S1", "S2","S3"], internal = false)
 
     #get the trajectory
     timeTable, trajectory = getTrajectory(timeRange, initialFrequency, game, mutationProbs = mutationProbs, μ = μ, solver = solver)
 
     #convert the trajectory from barycentrix coordinates to cartesian coordinates
     for i = 1:size(trajectory,1)
-        trajectory[i,2] = 0.8660254*trajectory[i,1]
+        trajectory[i,2] = sqrt(3/4)*trajectory[i,1]
         trajectory[i,1] = 0.5*trajectory[i,1] + trajectory[i,3]
     end
 
@@ -616,21 +585,33 @@ function threeStratsPhaseDiagram{T<:Real}(timeRange::Any, initialFrequency::Arra
         #enforce the x and y ranges and remove the axes
         ylim(-0.2,1.2)
         xlim(-0.2,1.2)
+        axis("equal")
         axis("off")
 
         #plot the simplex edges
-        plot([0, 0.5], [0, 0.8660254],color = "k")
-        plot([1, 0.5], [0, 0.8660254],color = "k")
+        plot([0, 0.5], [0, sqrt(3/4)],color = "k")
+        plot([1, 0.5], [0, sqrt(3/4)],color = "k")
         plot([0, 1], [0, 0],color = "k")
     end
 end
 
-function plotThreeStratsMultiTrajectories{T<:Real}(timeRange::Array{T,1}, game::Array{T,2}; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, step = 0.2,solver = ode23,labels = ["S1","S2","S3"])
-    #plot trajectories starting at different points, determined by the value of step
-    for i = 0.0:step:1.0
-        for j = 0.0:step:(1-i)
-            initialFrequency = [i; j; 1-i-j]
-            threeStratsPhaseDiagram(timeRange,initialFrequency,game,mutationProbs = mutationProbs, μ = μ, labels = ["","",""], internal = true)
+function plotThreeStrategiesMultiTrajectories{T<:Real}(timeRange::Any, game::Array{T,2}; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, step = 0.2,solver = ode23,labels = ["S1","S2","S3"], randomPlot = false, plots = 5)
+
+    if randomPlot == false
+        #plot trajectories starting at different points, determined by the value of step
+        for i = 0.0:step:1.0
+            for j = 0.0:step:(1-i)
+                initialFrequency = [i; j; 1-i-j]
+                plotThreeStrategiesPhaseDiagram(timeRange,initialFrequency,game,mutationProbs = mutationProbs, μ = μ, labels = ["","",""], internal = true)
+            end
+        end
+    else
+        #random trajectories
+        for i = 1:plots
+            j = rand()
+            k = rand()*(1-j)
+            initialFrequency = [j; k; 1-j-k]
+            plotThreeStrategiesPhaseDiagram(timeRange,initialFrequency,game,mutationProbs = mutationProbs, μ = μ, labels = ["","",""], internal = true)
         end
     end
 
@@ -642,16 +623,17 @@ function plotThreeStratsMultiTrajectories{T<:Real}(timeRange::Array{T,1}, game::
     #enforce the x and y ranges and remove the axes
     ylim(-0.2,1.2)
     xlim(-0.2,1.2)
+    axis("equal")
     axis("off")
 
     #plot the simplex edges
-    plot([0, 0.5], [0, 0.8660254],color = "k")
-    plot([1, 0.5], [0, 0.8660254],color = "k")
+    plot([0, 0.5], [0, sqrt(3/4)],color = "k")
+    plot([1, 0.5], [0, sqrt(3/4)],color = "k")
     plot([0, 1], [0, 0],color = "k")
 
 end
 
-function plotThreeStratsVectorField{T<:Real}(game::Array{T,2}; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0,step = 0.1)
+function plotThreeStrategiesVectorField{T<:Real}(game::Array{T,2}; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0,step = 0.1,labels = ["S1","S2","S3"])
 
     nStrategies = size(game,1)
 
@@ -684,9 +666,9 @@ function plotThreeStratsVectorField{T<:Real}(game::Array{T,2}; mutationProbs = [
     positionsCart = fill(0.0,(k,2))
     for i = 1:k
         vectorsCart[i,1] = 0.5*vectors[i,2] + vectors[i,1]
-        vectorsCart[i,2] = 0.8660254*vectors[i,2]
+        vectorsCart[i,2] = sqrt(3/4)*vectors[i,2]
         positionsCart[i,1] = 0.5*positions[i,2] + positions[i,1]
-        positionsCart[i,2] = 0.8660254*positions[i,2]
+        positionsCart[i,2] = sqrt(3/4)*positions[i,2]
     end
 
     #draw the vectors
@@ -700,11 +682,12 @@ function plotThreeStratsVectorField{T<:Real}(game::Array{T,2}; mutationProbs = [
     #enforce the x and y ranges
     ylim(-0.2,1.2)
     xlim(-0.2,1.2)
+    axis("equal")
     axis("off")
 
     #plot the simplex edges
-    plot([0, 0.5], [0, 0.8660254],color = "k")
-    plot([1, 0.5], [0, 0.8660254],color = "k")
+    plot([0, 0.5], [0, sqrt(3/4)],color = "k")
+    plot([1, 0.5], [0, sqrt(3/4)],color = "k")
     plot([0, 1], [0, 0],color = "k")
 
 end
