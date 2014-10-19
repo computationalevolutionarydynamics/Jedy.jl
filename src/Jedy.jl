@@ -53,7 +53,6 @@ type NormalGame
     end
 end
 
-
 type MoranProcess
     population::Population
     mutationRate::Float64
@@ -86,6 +85,26 @@ end
 
 function Population(groups::Array{Int64,1})
     return Population(groups, ["" for i in 1:length(groups)])
+end
+
+function NormalGame(players::Int64, strategies, payoffFunctions::Array{Function,1})
+    # Generate default strategy labels
+    # Empty array to put labels in
+    labels = {}
+    # Counter
+    counter = 0
+    for i in 1:size(strategies,1)
+        list = {}
+        for j in 1:size(strategies[i])
+            counter += 1
+            # Generate a label S<num> for each strategy
+            label = string("S", string(counter))
+            push!(list, label)
+        end
+        push!(labels,list)
+    end
+
+    return NormalGame(players, strategies, labels, payoffFunctions)
 end
 
 # Copy methods
