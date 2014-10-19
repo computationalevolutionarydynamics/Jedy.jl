@@ -53,23 +53,16 @@ end
 type MoranProcess
     population::Population
     mutationRate::Float64
-    payoffStructure
+    game::NormalGame
     intensityOfSelection::Real
     intensityOfSelectionMap::ASCIIString
 
-    function MoranProcess(population::Population, mutationRate::Float64, payoffStructure, intensityOfSelection::Real, intensityOfSelectionMap::ASCIIString)
+    function MoranProcess(population::Population, mutationRate::Float64, game::NormalGame, intensityOfSelection::Real, intensityOfSelectionMap::ASCIIString)
         if (intensityOfSelectionMap != "lin") && (intensityOfSelectionMap != "exp")
             throw(ArgumentError("Invalid intensity of selection mapping type"))
         end
-        if typeof(payoffStructure) <: Array
-            # If the payoff matrix has negative values, we want to remap those values to positve values
-            # The method by which this is done is likely to change
-            if (abs(payoffStructure) != payoffStructure) && (intensityOfSelectionMap == "lin")
-                throw(ArgumentError(("Negative payoffs cannot be used with linear intensity of selection mapping")))
-            end
-        end
 
-        return new(population, mutationRate, payoffStructure, intensityOfSelection, intensityOfSelectionMap)
+        return new(population, mutationRate, game, intensityOfSelection, intensityOfSelectionMap)
     end
 end
 
@@ -104,7 +97,7 @@ end
 
 copy(arg::Population) = Population(copy(arg.groups))
 
-copy(arg::MoranProcess) = MoranProcess(copy(arg.population), arg.mutationRate, arg.payoffStructure, arg.intensityOfSelection, arg.intensityOfSelectionMap)
+copy(arg::MoranProcess) = MoranProcess(copy(arg.population), arg.mutationRate, arg.game, arg.intensityOfSelection, arg.intensityOfSelectionMap)
 
 #####################################################################
 # Finite population 
