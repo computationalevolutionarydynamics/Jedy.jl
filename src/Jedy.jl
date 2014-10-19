@@ -326,10 +326,9 @@ function computeStationaryDistribution(process::MoranProcess)
 
 end
 
-function computeIntensityEffect(process::MoranProcess, intensityStart, intensityEnd, intensityStep)
+function computeIntensityEffect(process::MoranProcess, intensityValues)
 
     numGroups = length(process.population.groups)
-    intensityValues = intensityStart:intensityStep:intensityEnd
     stationaryDists = Array(Float64, (length(intensityValues), length(process.population.groups)))
     for i in 1:length(intensityValues)
         intensity = intensityValues[i]
