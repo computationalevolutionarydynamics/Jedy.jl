@@ -136,7 +136,7 @@ end
 
 function moranProcessStep!(process::MoranProcess)
     # Get the reproduction probability distribution
-    reproductionProbs = reproductionProbability(process.population, process.payoffStructure, process.intensityOfSelection, process.intensityOfSelectionMap)
+    reproductionProbs = reproductionProbability(process.population, process.game.payoffFunctions, process.intensityOfSelection, process.intensityOfSelectionMap)
 
     # Select the group that will reproduce
     reproductionGroup = sampleFromPDF(reproductionProbs)
@@ -264,8 +264,7 @@ function estimateStationaryDistribution(iterations::Int64, process::MoranProcess
     stationaryDist /= sum(stationaryDist)
 end
 
-function computeFixationProbability{T<:Real}(payoffMatrix::Array{T,2}, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64,
-                                            intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
+function computeFixationProbability{T<:Real}(payoffMatrix::Array{T,2}, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
 
     numGroups = size(payoffMatrix,1)
     gamma = zeros(Float64, totalPopSize - 1)
