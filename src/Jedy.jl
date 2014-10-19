@@ -291,10 +291,7 @@ function computeFixationProbability{T<:Real}(numGroups, payoffFunctions, dominan
     fixationProbability =  (1 + sum(map((x)->prod(gamma[1:x]),[1:mutantSize - 1]))) / (1 + sum(map((x)->prod(gamma[1:x]),[1:totalPopSize-1])))
 end
 
-function computeTransitionMatrix(process::MoranProcess)
-
-    # Get the number of groups
-    numGroups = length(process.population.groups)
+function computeTransitionMatrix(numGroups, payoffFunctions, totalPop, intensityOfSelection, intensityOfSelectionMap)
 
     transitionMatrix = zeros(Float64, (numGroups,numGroups))
 
@@ -304,7 +301,7 @@ function computeTransitionMatrix(process::MoranProcess)
         # Loop over the groups excluding the combination with itself
         for j = [1:i-1, i+1:numGroups]
 
-            transitionMatrix[i,j] = computeFixationProbability(numGroups, process.game.payoffFunctions, i, j, 1, process.population.totalPop, process.intensityOfSelection, process.intensityOfSelectionMap)
+            transitionMatrix[i,j] = computeFixationProbability(numGroups, payoffFunctions, i, j, 1, totalPop, intensityOfSelection, intensityOfSelectionMap)
 
         end
 
@@ -315,9 +312,9 @@ function computeTransitionMatrix(process::MoranProcess)
     return transitionMatrix
 end
 
-function computeStationaryDistribution(process::MoranProcess)
+function computeStationaryDistribution(numGroups, payoffFunctions, totalPop, intensityOfSelection, intensityOfSelectionMap)
 
-    transitionMatrix = computeTransitionMatrix(process)
+    transitionMatrix = computeTransitionMatrix(numGroups, payoffFunctions, totalPop, intensityOfSelection, intensityOfSelectionMap)
     stationaryVector = abs(eig(transitionMatrix)[2][2,:])
     stationaryVector /= sum(stationaryVector)
 
@@ -325,11 +322,12 @@ end
 
 function computeIntensityEffect(process::MoranProcess, intensityStart, intensityEnd, intensityStep)
 
+    numGroups = length(process.population.groups)
     intensityValues = intensityStart:intensityStep:intensityEnd
     stationaryDists = Array(Float64, (length(intensityValues), length(process.population.groups)))
     for i in 1:length(intensityValues)
         intensity = intensityValues[i]
-        stationaryDists[i,:] = computeStationaryDistribution(MoranProcess(process.population, 1e-3, dilemmaGame, intensity, "lin"))
+        stationaryDists[i,:] = computeStationaryDistribution(numGroups, process.game.payoffFunctions, process.population.totalPop, intensity, process.intensityOfSelectionMap)
     end
     return stationaryDists
 end
