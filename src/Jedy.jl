@@ -103,18 +103,29 @@ copy(arg::MoranProcess) = MoranProcess(copy(arg.population), arg.mutationRate, a
 # Finite population 
 #####################################################################
 
-function fitness{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
+function fitness{T<:Real}(pop::Population, payoffFunctions, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
     if (intensityOfSelectionMap != "lin") && (intensityOfSelectionMap != "exp")
         throw(ArgumentError("Invalid intensity of selection mapping type"))
     elseif intensityOfSelectionMap == "lin"
-        mappedPayoff = linear_fitness_map(payoffMatrix, intensityOfSelection)
+        mappingFunction = linear_fitness_map
     elseif intensityOfSelectionMap == "exp"
-        mappedPayoff = exponential_fitness_map(payoffMatrix, intensityOfSelection)
+        mappingFunction = exponential_fitness_map
     end
 
-    fitnessVector = mappedPayoff * pop.groups
-    fitnessVector -= diag(mappedPayoff)
-    fitnessVector /= pop.totalPop - 1
+    fitnessVector = {}
+    for i in 1:length(pop.groups)
+        fit = 0
+        for j = 1:length(pop.groups)
+            fit += payoffFunctions[1](i,j) * pop.groups[j]
+            if i == j
+                fit -= payoffFunctions[1](i,j)
+            end
+        end
+        fit /= pop.totalPop - 1
+        push!(fitnessVector,fit)
+        fitnessVector[i] = mappingFunction(fitnessVector[i], intensityOfSelection)
+    end
+    return fitnessVector
 end
 
 function reproductionProbability{T<:Real}(pop::Population, payoffMatrix::Array{T,2}, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
@@ -315,6 +326,7 @@ function computeStationaryDistribution(process::MoranProcess)
     stationaryVector /= sum(stationaryVector)
 
 end
+
 
 
 # Fitness mapping
