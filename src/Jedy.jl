@@ -41,10 +41,11 @@ type MoranProcess
     intensityOfSelectionMap::ASCIIString
 
     function MoranProcess(population::Population, mutationRate::Float64, game::SymmetricGame, intensityOfSelection::Real, intensityOfSelectionMap::ASCIIString)
+        intensityMap = lowercase(intensityOfSelectionMap)
         if (intensityOfSelectionMap != "lin") && (intensityOfSelectionMap != "exp")
             throw(ArgumentError("Invalid intensity of selection mapping type"))
         end
-        return new(population, mutationRate, game, intensityOfSelection, intensityOfSelectionMap)
+        return new(population, mutationRate, game, intensityOfSelection, intensityMap)
     end
 end
 
