@@ -1,4 +1,3 @@
-
 # Imports
 
 import Base.copy
@@ -24,45 +23,29 @@ type Population
     end
 end
 
-type NormalGame
+type SymmetricGame
     players::Int64
-    strategies
-    labels
-    payoffFunctions::Array{Function, 1}
+    strategies::Array{ASCIIString, 1}
+    payoffFunction::Function
 
-    function NormalGame(players::Int64, strategies, labels, payoffFunctions::Array{Function, 1})
-        # Check that the number of players matches the number of strategy sets
-        if size(strategies,1) != players
-            throw(ArgumentError("number of players does not match size of strategies array"))
-        # Check that the number of players matches the number of payoff functions
-        elseif size(payoffFunctions,1) != players
-            throw(ArgumentError("number of players does not match size of payoff function array"))
-        else
-            # Check that the size of each set matches the number of labels
-            for i in 1:size(strategies, 1)
-                if size(strategies[i]) != size(labels[i])
-                    throw(ArgumentError("not enough labels provided for each strategy"))
-                end
-            end
-        end
-
-        return new(players, strategies, labels, payoffFunctions)
+    function SymmetricGame(players::Int64, strategies::Array{ASCIIString, 1}, payoffFunction::Function)
+        return new(players, strategies, payoffFunction)
     end
 end
 
 type MoranProcess
     population::Population
     mutationRate::Float64
-    game::NormalGame
+    game::SymmetricGame
     intensityOfSelection::Real
     intensityOfSelectionMap::ASCIIString
 
-    function MoranProcess(population::Population, mutationRate::Float64, game::NormalGame, intensityOfSelection::Real, intensityOfSelectionMap::ASCIIString)
+    function MoranProcess(population::Population, mutationRate::Float64, game::SymmetricGame, intensityOfSelection::Real, intensityOfSelectionMap::ASCIIString)
+        intensityMap = lowercase(intensityOfSelectionMap)
         if (intensityOfSelectionMap != "lin") && (intensityOfSelectionMap != "exp")
             throw(ArgumentError("Invalid intensity of selection mapping type"))
         end
-
-        return new(population, mutationRate, game, intensityOfSelection, intensityOfSelectionMap)
+        return new(population, mutationRate, game, intensityOfSelection, intensityMap)
     end
 end
 
@@ -71,26 +54,6 @@ end
 function Population(groups::Array{Int64, 1})
     totalPop = sum(groups)
     return Population(groups, totalPop)
-end
-
-function NormalGame(players::Int64, strategies, payoffFunctions::Array{Function,1})
-    # Generate default strategy labels
-    # Empty array to put labels in
-    labels = {}
-    # Counter
-    counter = 0
-    for i in 1:size(strategies,1)
-        list = {}
-        for j in 1:length(strategies[i])
-            counter += 1
-            # Generate a label S<num> for each strategy
-            label = string("S", string(counter))
-            push!(list, label)
-        end
-        push!(labels,list)
-    end
-
-    return NormalGame(players, strategies, labels, payoffFunctions)
 end
 
 # Copy methods
@@ -103,7 +66,9 @@ copy(arg::MoranProcess) = MoranProcess(copy(arg.population), arg.mutationRate, a
 # Finite population 
 #####################################################################
 
-function fitness{T<:Real}(pop::Population, payoffFunctions, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
+# Fitness takes a population, a payoff function, an intensity of selection and an intensity of selection mapping and returns a vector which gives the frequency dependant fitness of each population
+
+function fitness{T<:Real}(pop::Population, payoffFunction::Function, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
     if (intensityOfSelectionMap != "lin") && (intensityOfSelectionMap != "exp")
         throw(ArgumentError("Invalid intensity of selection mapping type"))
     elseif intensityOfSelectionMap == "lin"
@@ -112,30 +77,31 @@ function fitness{T<:Real}(pop::Population, payoffFunctions, intensityOfSelection
         mappingFunction = exponential_fitness_map
     end
 
-    fitnessVector = Array(Float64, length(pop.groups))
+    # Extract the payoff matrix using the payoffFunction
+    numGroups = length(pop.groups)
+    payoffMatrix = zeros(Float64, (numGroups, numGroups))
     for i in 1:length(pop.groups)
-        fit = 0
         for j = 1:length(pop.groups)
-            fit += payoffFunctions[1](i,j) * pop.groups[j]
-            if i == j
-                fit -= payoffFunctions[1](i,j)
-            end
+            payoffMatrix[i,j] = payoffFunction(i,j)
         end
-        fit /= pop.totalPop - 1
-        fitnessVector[i] = mappingFunction(fit, intensityOfSelection)
     end
-    return fitnessVector
+    # Compute the fitness
+    fitnessVector = payoffMatrix * pop.groups
+    fitnessVector -= diag(payoffMatrix)
+    fitnessVector /= pop.totalPop
+    # Map the fitnessVector using the mappingFunction
+    fitnessVector = mappingFunction(fitnessVector, intensityOfSelection)
 end
 
-function reproductionProbability{T<:Real}(pop::Population, payoffFunctions, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
-    fitnessVector = fitness(pop, payoffFunctions, intensityOfSelection, intensityOfSelectionMap)
+function reproductionProbability{T<:Real}(pop::Population, payoffFunction::Function, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
+    fitnessVector = fitness(pop, payoffFunction, intensityOfSelection, intensityOfSelectionMap)
     probVector = fitnessVector .* pop.groups
-    probVector /= fitnessVector ⋅ pop.groups
+    probVector /= dot(fitnessVector,pop.groups)
 end
 
 function moranProcessStep!(process::MoranProcess)
     # Get the reproduction probability distribution
-    reproductionProbs = reproductionProbability(process.population, process.game.payoffFunctions, process.intensityOfSelection, process.intensityOfSelectionMap)
+    reproductionProbs = reproductionProbability(process.population, process.game.payoffFunction, process.intensityOfSelection, process.intensityOfSelectionMap)
 
     # Select the group that will reproduce
     reproductionGroup = sampleFromPDF(reproductionProbs)
@@ -169,10 +135,11 @@ end
 function generateTimeSeries(iterations::Int64, process::MoranProcess)
 
     # Set up a variable to hold the time series
-    timeSeries = zeros(Int64, (iterations, length(process.population.groups)))
+    timeSeries = zeros(Float64, (iterations, length(process.population.groups)))
 
     for i = 1:iterations
-        timeSeries[i,:] = moranProcessStep!(process).population.groups
+        moranProcessStep!(process)
+        timeSeries[i,:] = process.population.groups
     end
 
     return timeSeries
@@ -251,8 +218,8 @@ function estimateStationaryDistribution(iterations::Int64, process::MoranProcess
     copyOfProcess = copy(process)
 
     timeSeries = generateTimeSeries(iterations, copyOfProcess)
-    for i in 1:size(timeSeries, 1)
-        for j in 1:size(timeSeries, 2)
+    @simd for i in 1:size(timeSeries, 1)
+        @simd for j in 1:size(timeSeries, 2)
             if timeSeries[i, j] == copyOfProcess.population.totalPop
                 stationaryDist[j] += 1
             end
@@ -263,7 +230,7 @@ function estimateStationaryDistribution(iterations::Int64, process::MoranProcess
     stationaryDist /= sum(stationaryDist)
 end
 
-function computeFixationProbability{T<:Real}(numGroups, payoffFunctions, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
+function computeFixationProbability{T<:Real}(numGroups::Int64, payoffFunction::Function, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
 
     gamma = zeros(Float64, totalPopSize - 1)
 
@@ -277,10 +244,11 @@ function computeFixationProbability{T<:Real}(numGroups, payoffFunctions, dominan
         pop = Population(popArray)
 
         # Find the reproduction probabilities
-        reproductionProbs = reproductionProbability(pop, payoffFunctions, intensityOfSelection, intensityOfSelectionMap)
+        reproductionProbs = reproductionProbability(pop, payoffFunction, intensityOfSelection, intensityOfSelectionMap)
 
-        # Figure out the probability of mutant decreasing and prob of mutant increasing
+        # Find probability of mutant pop decreasing when there are k mutants
         probDecrease = reproductionProbs[dominantPop] * k / totalPopSize
+        # Find probability of mutant pop increasing when there are k mutants
         probIncrease = reproductionProbs[mutantPop] * (totalPopSize - k) / totalPopSize
 
         # Calculate gamma
@@ -288,20 +256,23 @@ function computeFixationProbability{T<:Real}(numGroups, payoffFunctions, dominan
     end
 
     # Now calculate the fixation probability
-    fixationProbability =  (1 + sum(map((x)->prod(gamma[1:x]),[1:mutantSize - 1]))) / (1 + sum(map((x)->prod(gamma[1:x]),[1:totalPopSize-1])))
+    numerator = 1 + sum(map((x)->prod(gamma[1:x]),[1:mutantSize - 1]))
+    denominator = 1 + sum(map((x)->prod(gamma[1:x]),[1:totalPopSize-1]))
+    fixationProbability = numerator / denominator
+    return fixationProbability
 end
 
-function computeTransitionMatrix(numGroups, payoffFunctions, totalPop, intensityOfSelection, intensityOfSelectionMap)
+function computeTransitionMatrix(numGroups::Int64, payoffFunction::Function, totalPop::Int64, intensityOfSelection::Float64, intensityOfSelectionMap::ASCIIString)
 
     transitionMatrix = zeros(Float64, (numGroups,numGroups))
 
     # Loop over the groups
-    for i = 1:numGroups
+    for i in 1:numGroups
 
         # Loop over the groups excluding the combination with itself
-        for j = [1:i-1, i+1:numGroups]
+        for j in [1:i-1, i+1:numGroups]
 
-            transitionMatrix[i,j] = computeFixationProbability(numGroups, payoffFunctions, i, j, 1, totalPop, intensityOfSelection, intensityOfSelectionMap)
+            transitionMatrix[i,j] = (1/2) * computeFixationProbability(numGroups, payoffFunction, i, j, 1, totalPop, intensityOfSelection, intensityOfSelectionMap)
 
         end
 
@@ -312,17 +283,28 @@ function computeTransitionMatrix(numGroups, payoffFunctions, totalPop, intensity
     return transitionMatrix
 end
 
-function computeStationaryDistribution(numGroups, payoffFunctions, totalPop, intensityOfSelection, intensityOfSelectionMap)
+function computeStationaryDistribution(numGroups::Int64, payoffFunction::Function, totalPop::Int64, intensityOfSelection::Float64, intensityOfSelectionMap::ASCIIString)
 
-    transitionMatrix = computeTransitionMatrix(numGroups, payoffFunctions, totalPop, intensityOfSelection, intensityOfSelectionMap)
-    stationaryVector = abs(eig(transitionMatrix)[2][2,:])
+    # Compute the transition matrix
+    transitionMatrix = computeTransitionMatrix(numGroups, payoffFunction, totalPop, intensityOfSelection, intensityOfSelectionMap)
+    # Compute the eigenvalues and vectors
+    eigObj = eigfact(transitionMatrix')
+    # Loop over the eigenvalues until we find the eigenvalue 1.0
+    for i in 1:length(eigObj[:values])
+        if abs(eigObj[:values][i] - 1.0) < 1e-4
+            stationaryVector = eigObj[:vectors][:, i]
+            break
+        end
+    end
+
+    # Normalise the vector
     stationaryVector /= sum(stationaryVector)
 
 end
 
 function computeStationaryDistribution(process::MoranProcess)
 
-    computeStationaryDistribution(length(process.population.groups), process.game.payoffFunctions, process.population.totalPop, process.intensityOfSelection, process.intensityOfSelectionMap)
+    computeStationaryDistribution(length(process.population.groups), process.game.payoffFunction, process.population.totalPop, process.intensityOfSelection, process.intensityOfSelectionMap)
 
 end
 
@@ -332,7 +314,7 @@ function computeIntensityEffect(process::MoranProcess, intensityValues)
     stationaryDists = Array(Float64, (length(intensityValues), length(process.population.groups)))
     for i in 1:length(intensityValues)
         intensity = intensityValues[i]
-        stationaryDists[i,:] = computeStationaryDistribution(numGroups, process.game.payoffFunctions, process.population.totalPop, intensity, process.intensityOfSelectionMap)
+        stationaryDists[i,:] = computeStationaryDistribution(numGroups, process.game.payoffFunction, process.population.totalPop, intensity, process.intensityOfSelectionMap)
     end
     return stationaryDists
 end
@@ -341,16 +323,16 @@ end
 # Fitness mapping
 
 # Array value
-exponential_fitness_map{T<:Real}(payoff::Array{T}, intensityOfSelection::T) = exp(intensityOfSelection*payoff)
+exponential_fitness_map{T, S <:Real}(payoff::Array{T}, intensityOfSelection::S) = exp(intensityOfSelection*payoff)
 
 # Single value
-exponential_fitness_map{T<:Real}(payoff::T, intensityOfSelection::T) = exp(intensityOfSelection*payoff)
+exponential_fitness_map{T, S <:Real}(payoff::T, intensityOfSelection::S)= exp(intensityOfSelection*payoff)
 
 # Array value
-linear_fitness_map{T<:Real}(payoff::Array{T}, intensityOfSelection::T) = 1 - intensityOfSelection + intensityOfSelection*payoff
+linear_fitness_map{T, S <:Real}(payoff::Array{T}, intensityOfSelection::S) = 1 - intensityOfSelection + intensityOfSelection*payoff
 
 # Single value
-linear_fitness_map{T<:Real}(payoff::T, intensityOfSelection::T) = 1 - intensityOfSelection + intensityOfSelection*payoff
+linear_fitness_map{T, S <:Real}(payoff::T, intensityOfSelection::S) = 1 - intensityOfSelection + intensityOfSelection*payoff
 
 
 # Helper methods
@@ -402,18 +384,6 @@ function replicator{T<:Real}(timeRange::Any, frequency::Array{T,1}, game::Array{
     return frequency .* (fitness - averageFitness)
 end
 
-function replicatorTest()
-    frequency = Float64[0.3; 0.7]
-    game = Float64[2 1; 3 -1]
-    derivative = replicator(0,frequency, game)
-    epsilon = 10^(-5.0)
-    if abs(derivative[1]  - 0.231) < epsilon && abs(derivative[2]  + 0.231) < epsilon
-        return "replicator works properly"
-    else
-        return "replicator isn't working"
-    end
-end
-
 function buildMutationMatrix{T<:Real}(μ::T,nStrategies::Int64)
     #build the matrix holding the mutation probabilities
     mutationProbs = fill(μ,(nStrategies,nStrategies))
@@ -425,13 +395,7 @@ function buildMutationMatrix{T<:Real}(μ::T,nStrategies::Int64)
     return mutationProbs
 end
 
-function testBuiltMutationMatrix()
-    if buildMutationMatrix(0.1,3) == [0.8 0.1 0.1; 0.1 0.8 0.1; 0.1 0.1 0.8]
-        return "builtMutationMatrix works"
-    else
-        return "builtMutationMatrix doesn't work"
-    end
-end
+
 
 function replicatorMutator{T<:Real}(timeRange::Any, frequency::Array{T,1},game::Array{T,2}; mutationProbs = [0 0 0; 0 0 0; 0 0 0])
     """
@@ -453,20 +417,7 @@ function replicatorMutator{T<:Real}(timeRange::Any, frequency::Array{T,1},game::
     return (mutationProbs * (frequency .* fitness)) - (averageFitness * frequency)
 end
 
-function replicatorMutatorTest()
-    frequency = Float64[0.3; 0.7]
-    game = Float64[2 1; 3 -1]
-    mutationProbs = [0.9 0.1; 0.1 0.9]
-    epsilon = 10^(-5.0)
-    derivative = replicatorMutator(false,frequency, game, mutationProbs = mutationProbs)
 
-    if abs(derivative[1]  - 0.206) < epsilon && abs(derivative[2]  + 0.206) < epsilon
-        return "replicator-mutator works properly"
-    else
-        return "replicator-mutator isn't working"
-    end
-
-end
 
 function considerMutation{T<:Real}(mutationProbs::Array{T,2}, μ::Float64, nStrategies::Int64)
 
@@ -519,7 +470,7 @@ function getTrajectory{T<:Real}(timeRange::Any,initialFrequency::Array{T,1},game
 
 end
 
-function twoStratsPhaseDiagram{T<:Real}(game::Array{T,2}; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, labels = ["S1", "S2"], step = 0.001)
+function twoStrategiesPhaseDiagram{T<:Real}(game::Array{T,2}; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, labels = ["S1", "S2"], step = 0.001)
 
     nStrategies = 2
 
@@ -598,14 +549,14 @@ function twoStratsPhaseDiagram{T<:Real}(game::Array{T,2}; mutationProbs = [0 0 0
     PyPlot.xlim(-0.2,1.2)
 end
 
-function threeStratsPhaseDiagram{T<:Real}(timeRange::Any, initialFrequency::Array{T,1}, game::Array{T,2}; mutationProbs =  [0 0 0; 0 0 0; 0 0 0], μ = 0.0, solver = ode23, labels = ["S1", "S2","S3"], internal = false)
+function plotThreeStrategiesPhaseDiagram{T<:Real}(timeRange::Any, initialFrequency::Array{T,1}, game::Array{T,2}; mutationProbs =  [0 0 0; 0 0 0; 0 0 0], μ = 0.0, solver = ode23, labels = ["S1", "S2","S3"], internal = false)
 
     #get the trajectory
     timeTable, trajectory = getTrajectory(timeRange, initialFrequency, game, mutationProbs = mutationProbs, μ = μ, solver = solver)
 
     #convert the trajectory from barycentrix coordinates to cartesian coordinates
     for i = 1:size(trajectory,1)
-        trajectory[i,2] = 0.8660254*trajectory[i,1]
+        trajectory[i,2] = sqrt(3/4)*trajectory[i,1]
         trajectory[i,1] = 0.5*trajectory[i,1] + trajectory[i,3]
     end
 
@@ -626,21 +577,33 @@ function threeStratsPhaseDiagram{T<:Real}(timeRange::Any, initialFrequency::Arra
         #enforce the x and y ranges and remove the axes
         ylim(-0.2,1.2)
         xlim(-0.2,1.2)
+        axis("equal")
         axis("off")
 
         #plot the simplex edges
-        plot([0, 0.5], [0, 0.8660254],color = "k")
-        plot([1, 0.5], [0, 0.8660254],color = "k")
+        plot([0, 0.5], [0, sqrt(3/4)],color = "k")
+        plot([1, 0.5], [0, sqrt(3/4)],color = "k")
         plot([0, 1], [0, 0],color = "k")
     end
 end
 
-function plotThreeStratsMultiTrajectories{T<:Real}(timeRange::Array{T,1}, game::Array{T,2}; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, step = 0.2,solver = ode23,labels = ["S1","S2","S3"])
-    #plot trajectories starting at different points, determined by the value of step
-    for i = 0.0:step:1.0
-        for j = 0.0:step:(1-i)
-            initialFrequency = [i; j; 1-i-j]
-            threeStratsPhaseDiagram(timeRange,initialFrequency,game,mutationProbs = mutationProbs, μ = μ, labels = ["","",""], internal = true)
+function plotThreeStrategiesMultiTrajectories{T<:Real}(timeRange::Any, game::Array{T,2}; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, step = 0.2,solver = ode23,labels = ["S1","S2","S3"], randomPlot = false, plots = 5)
+
+    if randomPlot == false
+        #plot trajectories starting at different points, determined by the value of step
+        for i = 0.0:step:1.0
+            for j = 0.0:step:(1-i)
+                initialFrequency = [i; j; 1-i-j]
+                plotThreeStrategiesPhaseDiagram(timeRange,initialFrequency,game,mutationProbs = mutationProbs, μ = μ, labels = ["","",""], internal = true)
+            end
+        end
+    else
+        #random trajectories
+        for i = 1:plots
+            j = rand()
+            k = rand()*(1-j)
+            initialFrequency = [j; k; 1-j-k]
+            plotThreeStrategiesPhaseDiagram(timeRange,initialFrequency,game,mutationProbs = mutationProbs, μ = μ, labels = ["","",""], internal = true)
         end
     end
 
@@ -652,16 +615,17 @@ function plotThreeStratsMultiTrajectories{T<:Real}(timeRange::Array{T,1}, game::
     #enforce the x and y ranges and remove the axes
     ylim(-0.2,1.2)
     xlim(-0.2,1.2)
+    axis("equal")
     axis("off")
 
     #plot the simplex edges
-    plot([0, 0.5], [0, 0.8660254],color = "k")
-    plot([1, 0.5], [0, 0.8660254],color = "k")
+    plot([0, 0.5], [0, sqrt(3/4)],color = "k")
+    plot([1, 0.5], [0, sqrt(3/4)],color = "k")
     plot([0, 1], [0, 0],color = "k")
 
 end
 
-function plotThreeStratsVectorField{T<:Real}(game::Array{T,2}; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0,step = 0.1)
+function plotThreeStrategiesVectorField{T<:Real}(game::Array{T,2}; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0,step = 0.1,labels = ["S1","S2","S3"])
 
     nStrategies = size(game,1)
 
@@ -694,9 +658,9 @@ function plotThreeStratsVectorField{T<:Real}(game::Array{T,2}; mutationProbs = [
     positionsCart = fill(0.0,(k,2))
     for i = 1:k
         vectorsCart[i,1] = 0.5*vectors[i,2] + vectors[i,1]
-        vectorsCart[i,2] = 0.8660254*vectors[i,2]
+        vectorsCart[i,2] = sqrt(3/4)*vectors[i,2]
         positionsCart[i,1] = 0.5*positions[i,2] + positions[i,1]
-        positionsCart[i,2] = 0.8660254*positions[i,2]
+        positionsCart[i,2] = sqrt(3/4)*positions[i,2]
     end
 
     #draw the vectors
@@ -710,11 +674,12 @@ function plotThreeStratsVectorField{T<:Real}(game::Array{T,2}; mutationProbs = [
     #enforce the x and y ranges
     ylim(-0.2,1.2)
     xlim(-0.2,1.2)
+    axis("equal")
     axis("off")
 
     #plot the simplex edges
-    plot([0, 0.5], [0, 0.8660254],color = "k")
-    plot([1, 0.5], [0, 0.8660254],color = "k")
+    plot([0, 0.5], [0, sqrt(3/4)],color = "k")
+    plot([1, 0.5], [0, sqrt(3/4)],color = "k")
     plot([0, 1], [0, 0],color = "k")
 
 end

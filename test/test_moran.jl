@@ -44,8 +44,9 @@ testPop = Population(testArr)
 # Test fitness function for matrix games
 # Test that the fitness is correct for a simple game and a simple population
 payoffMatrix = [0 1; 1 0]
+payoffFunction(i, j) = payoffMatrix[i,j]
 pop = Population([10,10])
-@test fitness(pop, payoffMatrix, 1, "lin") == [10/19,10/19]
+@test fitness(pop, payoffFunction, 1, "lin") == [10/19,10/19]
 
 end
 
