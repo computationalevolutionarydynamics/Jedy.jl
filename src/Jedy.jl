@@ -77,19 +77,18 @@ function fitness{T<:Real}(pop::Population, payoffFunction::Function, intensityOf
         mappingFunction = exponential_fitness_map
     end
 
-    fitnessVector = Array(Float64, length(pop.groups))
+    # Extract the payoff matrix using the payoffFunction
+    numGroups = length(pop.groups)
+    payoffMatrix = zeros(Float64, (numGroups, numGroups))
     for i in 1:length(pop.groups)
-        fit = 0
         for j = 1:length(pop.groups)
-            fit += payoffFunction(i,j) * pop.groups[j]
-            if i == j
-                fit -= payoffFunction(i,j)
-            end
+            payoffMatrix[i,j] = payoffFunction(i,j)
         end
-        fit /= pop.totalPop - 1
-        fitnessVector[i] = mappingFunction(fit, intensityOfSelection)
     end
-    return fitnessVector
+    # Compute the fitness
+    fitnessVector = payoffMatrix * pop.groups
+    fitnessVector -= diag(payoffMatrix)
+    fitnessVector /= pop.totalPop
 end
 
 function reproductionProbability{T<:Real}(pop::Population, payoffFunction::Function, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
