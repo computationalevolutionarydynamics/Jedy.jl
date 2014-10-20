@@ -29,7 +29,7 @@ type SymmetricGame
     strategies::Array{ASCIIString, 1}
     payoffFunction::Function
 
-    function NormalGame(players::Int64, strategies::Array{ASCIIString, 1}, payoffFunction1::Function)
+    function SymmetricGame(players::Int64, strategies::Array{ASCIIString, 1}, payoffFunction1::Function)
 
         return new(players, strategies, payoffFunctions)
 
