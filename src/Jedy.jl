@@ -1,4 +1,3 @@
-
 # Imports
 
 import Base.copy
@@ -30,9 +29,7 @@ type SymmetricGame
     payoffFunction::Function
 
     function SymmetricGame(players::Int64, strategies::Array{ASCIIString, 1}, payoffFunction::Function)
-
         return new(players, strategies, payoffFunction)
-
     end
 end
 
@@ -47,7 +44,6 @@ type MoranProcess
         if (intensityOfSelectionMap != "lin") && (intensityOfSelectionMap != "exp")
             throw(ArgumentError("Invalid intensity of selection mapping type"))
         end
-
         return new(population, mutationRate, game, intensityOfSelection, intensityOfSelectionMap)
     end
 end
