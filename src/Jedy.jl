@@ -245,8 +245,9 @@ function computeFixationProbability{T<:Real}(numGroups::Int64, payoffFunction::F
         # Find the reproduction probabilities
         reproductionProbs = reproductionProbability(pop, payoffFunction, intensityOfSelection, intensityOfSelectionMap)
 
-        # Figure out the probability of mutant decreasing and prob of mutant increasing
+        # Find probability of mutant pop decreasing when there are k mutants
         probDecrease = reproductionProbs[dominantPop] * k / totalPopSize
+        # Find probability of mutant pop increasing when there are k mutants
         probIncrease = reproductionProbs[mutantPop] * (totalPopSize - k) / totalPopSize
 
         # Calculate gamma
@@ -254,7 +255,9 @@ function computeFixationProbability{T<:Real}(numGroups::Int64, payoffFunction::F
     end
 
     # Now calculate the fixation probability
-    fixationProbability =  (1 + sum(map((x)->prod(gamma[1:x]),[1:mutantSize - 1]))) / (1 + sum(map((x)->prod(gamma[1:x]),[1:totalPopSize-1])))
+    numerator = 1 + sum(map((x)->prod(gamma[1:x]),[1:mutantSize - 1]))
+    denominator = 1 + sum(map((x)->prod(gamma[1:x]),[1:totalPopSize-1]))
+    fixationProbability = numerator / denominator
 end
 
 function computeTransitionMatrix(numGroups::Int64, payoffFunction::Function, totalPop::Int64, intensityOfSelection::Float64, intensityOfSelectionMap::ASCIIString)
