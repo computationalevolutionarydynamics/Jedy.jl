@@ -39,7 +39,7 @@ end
 type MoranProcess
     population::Population
     mutationRate::Float64
-    game::NormalGame
+    game::SymmetricGame
     intensityOfSelection::Real
     intensityOfSelectionMap::ASCIIString
 
