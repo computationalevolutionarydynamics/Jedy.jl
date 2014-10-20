@@ -66,6 +66,8 @@ copy(arg::MoranProcess) = MoranProcess(copy(arg.population), arg.mutationRate, a
 # Finite population 
 #####################################################################
 
+# Fitness takes a population, a payoff function, an intensity of selection and an intensity of selection mapping and returns a vector which gives the frequency dependant fitness of each population
+
 function fitness{T<:Real}(pop::Population, payoffFunction::Function, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
     if (intensityOfSelectionMap != "lin") && (intensityOfSelectionMap != "exp")
         throw(ArgumentError("Invalid intensity of selection mapping type"))
