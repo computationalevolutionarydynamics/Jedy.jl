@@ -89,6 +89,8 @@ function fitness{T<:Real}(pop::Population, payoffFunction::Function, intensityOf
     fitnessVector = payoffMatrix * pop.groups
     fitnessVector -= diag(payoffMatrix)
     fitnessVector /= pop.totalPop
+    # Map the fitnessVector using the mappingFunction
+    fitnessVector = mappingFunction(fitnessVector, intensityOfSelection)
 end
 
 function reproductionProbability{T<:Real}(pop::Population, payoffFunction::Function, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
