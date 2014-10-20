@@ -138,7 +138,8 @@ function generateTimeSeries(iterations::Int64, process::MoranProcess)
     timeSeries = zeros(Float64, (iterations, length(process.population.groups)))
 
     for i = 1:iterations
-        timeSeries[i,:] = moranProcessStep!(process).population.groups
+        moranProcessStep!(process)
+        timeSeries[i,:] = process.population.groups
     end
 
     return timeSeries
