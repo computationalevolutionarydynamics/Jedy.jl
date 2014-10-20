@@ -24,29 +24,15 @@ type Population
     end
 end
 
-type NormalGame
+type SymmetricGame
     players::Int64
-    strategies
-    labels
-    payoffFunctions::Array{Function, 1}
+    strategies::Array(ASCIIString, 1)
+    payoffFunction::Function
 
-    function NormalGame(players::Int64, strategies, labels, payoffFunctions::Array{Function, 1})
-        # Check that the number of players matches the number of strategy sets
-        if size(strategies,1) != players
-            throw(ArgumentError("number of players does not match size of strategies array"))
-        # Check that the number of players matches the number of payoff functions
-        elseif size(payoffFunctions,1) != players
-            throw(ArgumentError("number of players does not match size of payoff function array"))
-        else
-            # Check that the size of each set matches the number of labels
-            for i in 1:size(strategies, 1)
-                if size(strategies[i]) != size(labels[i])
-                    throw(ArgumentError("not enough labels provided for each strategy"))
-                end
-            end
-        end
+    function NormalGame(players::Int64, strategies::Array(ASCIIString, 1), payoffFunction1::Function)
 
         return new(players, strategies, labels, payoffFunctions)
+
     end
 end
 
