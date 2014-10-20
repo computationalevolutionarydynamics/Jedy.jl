@@ -26,12 +26,12 @@ end
 
 type SymmetricGame
     players::Int64
-    strategies::Array(ASCIIString, 1)
+    strategies::Array{ASCIIString, 1}
     payoffFunction::Function
 
-    function NormalGame(players::Int64, strategies::Array(ASCIIString, 1), payoffFunction1::Function)
+    function NormalGame(players::Int64, strategies::Array{ASCIIString, 1}, payoffFunction1::Function)
 
-        return new(players, strategies, labels, payoffFunctions)
+        return new(players, strategies, payoffFunctions)
 
     end
 end
@@ -229,7 +229,7 @@ function estimateStationaryDistribution(iterations::Int64, process::MoranProcess
     stationaryDist /= sum(stationaryDist)
 end
 
-function computeFixationProbability{T<:Real}(numGroups::Int64 payoffFunction::Function dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
+function computeFixationProbability{T<:Real}(numGroups::Int64, payoffFunction::Function, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
 
     gamma = zeros(Float64, totalPopSize - 1)
 
