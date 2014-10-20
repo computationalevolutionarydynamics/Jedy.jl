@@ -96,7 +96,7 @@ end
 function reproductionProbability{T<:Real}(pop::Population, payoffFunction::Function, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
     fitnessVector = fitness(pop, payoffFunction, intensityOfSelection, intensityOfSelectionMap)
     probVector = fitnessVector .* pop.groups
-    probVector /= fitnessVector ⋅ pop.groups
+    probVector /= dot(fitnessVector,pop.groups)
 end
 
 function moranProcessStep!(process::MoranProcess)
@@ -258,6 +258,7 @@ function computeFixationProbability{T<:Real}(numGroups::Int64, payoffFunction::F
     numerator = 1 + sum(map((x)->prod(gamma[1:x]),[1:mutantSize - 1]))
     denominator = 1 + sum(map((x)->prod(gamma[1:x]),[1:totalPopSize-1]))
     fixationProbability = numerator / denominator
+    return fixationProbability
 end
 
 function computeTransitionMatrix(numGroups::Int64, payoffFunction::Function, totalPop::Int64, intensityOfSelection::Float64, intensityOfSelectionMap::ASCIIString)
@@ -286,7 +287,7 @@ function computeStationaryDistribution(numGroups::Int64, payoffFunction::Functio
     # Compute the transition matrix
     transitionMatrix = computeTransitionMatrix(numGroups, payoffFunction, totalPop, intensityOfSelection, intensityOfSelectionMap)
     # Compute the eigenvalues and vectors
-    eigObj = eigfact(transitionMatrix)
+    eigObj = eigfact(transitionMatrix')
     # Loop over the eigenvalues until we find the eigenvalue 1.0
     for i in 1:length(eigObj[:values])
         if abs(eigObj[:values][i] - 1.0) < 1e-4
