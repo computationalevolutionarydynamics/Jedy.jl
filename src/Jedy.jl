@@ -43,7 +43,7 @@ type MoranProcess
     intensityOfSelection::Real
     intensityOfSelectionMap::ASCIIString
 
-    function MoranProcess(population::Population, mutationRate::Float64, game::NormalGame, intensityOfSelection::Real, intensityOfSelectionMap::ASCIIString)
+    function MoranProcess(population::Population, mutationRate::Float64, game::SymmetricGame, intensityOfSelection::Real, intensityOfSelectionMap::ASCIIString)
         if (intensityOfSelectionMap != "lin") && (intensityOfSelectionMap != "exp")
             throw(ArgumentError("Invalid intensity of selection mapping type"))
         end
@@ -59,26 +59,6 @@ function Population(groups::Array{Int64, 1})
     return Population(groups, totalPop)
 end
 
-function NormalGame(players::Int64, strategies, payoffFunctions::Array{Function,1})
-    # Generate default strategy labels
-    # Empty array to put labels in
-    labels = {}
-    # Counter
-    counter = 0
-    for i in 1:size(strategies,1)
-        list = {}
-        for j in 1:length(strategies[i])
-            counter += 1
-            # Generate a label S<num> for each strategy
-            label = string("S", string(counter))
-            push!(list, label)
-        end
-        push!(labels,list)
-    end
-
-    return NormalGame(players, strategies, labels, payoffFunctions)
-end
-
 # Copy methods
 
 copy(arg::Population) = Population(copy(arg.groups))
@@ -89,7 +69,7 @@ copy(arg::MoranProcess) = MoranProcess(copy(arg.population), arg.mutationRate, a
 # Finite population 
 #####################################################################
 
-function fitness{T<:Real}(pop::Population, payoffFunctions, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
+function fitness{T<:Real}(pop::Population, payoffFunction::Function, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
     if (intensityOfSelectionMap != "lin") && (intensityOfSelectionMap != "exp")
         throw(ArgumentError("Invalid intensity of selection mapping type"))
     elseif intensityOfSelectionMap == "lin"
@@ -102,9 +82,9 @@ function fitness{T<:Real}(pop::Population, payoffFunctions, intensityOfSelection
     for i in 1:length(pop.groups)
         fit = 0
         for j = 1:length(pop.groups)
-            fit += payoffFunctions[1](i,j) * pop.groups[j]
+            fit += payoffFunction(i,j) * pop.groups[j]
             if i == j
-                fit -= payoffFunctions[1](i,j)
+                fit -= payoffFunction(i,j)
             end
         end
         fit /= pop.totalPop - 1
@@ -113,15 +93,15 @@ function fitness{T<:Real}(pop::Population, payoffFunctions, intensityOfSelection
     return fitnessVector
 end
 
-function reproductionProbability{T<:Real}(pop::Population, payoffFunctions, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
-    fitnessVector = fitness(pop, payoffFunctions, intensityOfSelection, intensityOfSelectionMap)
+function reproductionProbability{T<:Real}(pop::Population, payoffFunction::Function, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
+    fitnessVector = fitness(pop, payoffFunction, intensityOfSelection, intensityOfSelectionMap)
     probVector = fitnessVector .* pop.groups
     probVector /= fitnessVector ⋅ pop.groups
 end
 
 function moranProcessStep!(process::MoranProcess)
     # Get the reproduction probability distribution
-    reproductionProbs = reproductionProbability(process.population, process.game.payoffFunctions, process.intensityOfSelection, process.intensityOfSelectionMap)
+    reproductionProbs = reproductionProbability(process.population, process.game.payoffFunction, process.intensityOfSelection, process.intensityOfSelectionMap)
 
     # Select the group that will reproduce
     reproductionGroup = sampleFromPDF(reproductionProbs)
@@ -249,7 +229,7 @@ function estimateStationaryDistribution(iterations::Int64, process::MoranProcess
     stationaryDist /= sum(stationaryDist)
 end
 
-function computeFixationProbability{T<:Real}(numGroups, payoffFunctions, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
+function computeFixationProbability{T<:Real}(numGroups::Int64 payoffFunction::Function dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
 
     gamma = zeros(Float64, totalPopSize - 1)
 
@@ -263,7 +243,7 @@ function computeFixationProbability{T<:Real}(numGroups, payoffFunctions, dominan
         pop = Population(popArray)
 
         # Find the reproduction probabilities
-        reproductionProbs = reproductionProbability(pop, payoffFunctions, intensityOfSelection, intensityOfSelectionMap)
+        reproductionProbs = reproductionProbability(pop, payoffFunction, intensityOfSelection, intensityOfSelectionMap)
 
         # Figure out the probability of mutant decreasing and prob of mutant increasing
         probDecrease = reproductionProbs[dominantPop] * k / totalPopSize
@@ -277,7 +257,7 @@ function computeFixationProbability{T<:Real}(numGroups, payoffFunctions, dominan
     fixationProbability =  (1 + sum(map((x)->prod(gamma[1:x]),[1:mutantSize - 1]))) / (1 + sum(map((x)->prod(gamma[1:x]),[1:totalPopSize-1])))
 end
 
-function computeTransitionMatrix(numGroups, payoffFunctions, totalPop, intensityOfSelection, intensityOfSelectionMap)
+function computeTransitionMatrix(numGroups::Int64, payoffFunction::Function, totalPop::Int64, intensityOfSelection::Float64, intensityOfSelectionMap::ASCIIString)
 
     transitionMatrix = zeros(Float64, (numGroups,numGroups))
 
@@ -287,7 +267,7 @@ function computeTransitionMatrix(numGroups, payoffFunctions, totalPop, intensity
         # Loop over the groups excluding the combination with itself
         for j = [1:i-1, i+1:numGroups]
 
-            transitionMatrix[i,j] = computeFixationProbability(numGroups, payoffFunctions, i, j, 1, totalPop, intensityOfSelection, intensityOfSelectionMap)
+            transitionMatrix[i,j] = computeFixationProbability(numGroups, payoffFunction, i, j, 1, totalPop, intensityOfSelection, intensityOfSelectionMap)
 
         end
 
@@ -298,9 +278,9 @@ function computeTransitionMatrix(numGroups, payoffFunctions, totalPop, intensity
     return transitionMatrix
 end
 
-function computeStationaryDistribution(numGroups, payoffFunctions, totalPop, intensityOfSelection, intensityOfSelectionMap)
+function computeStationaryDistribution(numGroups::Int64, payoffFunction::Function, totalPop::Int64, intensityOfSelection::Float64, intensityOfSelectionMap::ASCIIString)
 
-    transitionMatrix = computeTransitionMatrix(numGroups, payoffFunctions, totalPop, intensityOfSelection, intensityOfSelectionMap)
+    transitionMatrix = computeTransitionMatrix(numGroups, payoffFunction, totalPop, intensityOfSelection, intensityOfSelectionMap)
     stationaryVector = abs(eig(transitionMatrix)[2][2,:])
     stationaryVector /= sum(stationaryVector)
 
@@ -308,7 +288,7 @@ end
 
 function computeStationaryDistribution(process::MoranProcess)
 
-    computeStationaryDistribution(length(process.population.groups), process.game.payoffFunctions, process.population.totalPop, process.intensityOfSelection, process.intensityOfSelectionMap)
+    computeStationaryDistribution(length(process.population.groups), process.game.payoffFunction, process.population.totalPop, process.intensityOfSelection, process.intensityOfSelectionMap)
 
 end
 
@@ -319,7 +299,7 @@ function computeIntensityEffect(process::MoranProcess, intensityStart, intensity
     stationaryDists = Array(Float64, (length(intensityValues), length(process.population.groups)))
     for i in 1:length(intensityValues)
         intensity = intensityValues[i]
-        stationaryDists[i,:] = computeStationaryDistribution(numGroups, process.game.payoffFunctions, process.population.totalPop, intensity, process.intensityOfSelectionMap)
+        stationaryDists[i,:] = computeStationaryDistribution(numGroups, process.game.payoffFunction, process.population.totalPop, intensity, process.intensityOfSelectionMap)
     end
     return stationaryDists
 end
