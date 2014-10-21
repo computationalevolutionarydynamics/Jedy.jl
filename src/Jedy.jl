@@ -218,12 +218,8 @@ function estimateStationaryDistribution(iterations::Int64, process::MoranProcess
     copyOfProcess = copy(process)
 
     timeSeries = generateTimeSeries(iterations, copyOfProcess)
-    @simd for i in 1:size(timeSeries, 1)
-        @simd for j in 1:size(timeSeries, 2)
-            if timeSeries[i, j] == copyOfProcess.population.totalPop
-                stationaryDist[j] += 1
-            end
-        end
+    @simd for i in 1:size(timeSeries,2)
+        @inbounds stationaryDist[i] = count(i->(i==process.population.totalPop), timeSeries[:,i])
     end
 
     # Divide by the number of entries
