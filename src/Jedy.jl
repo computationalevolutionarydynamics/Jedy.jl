@@ -1,3 +1,4 @@
+module JEDy
 # Imports
 
 import Base.copy
@@ -708,4 +709,6 @@ end
 
 function clearSimplex()
     clf()
+end
+
 end
