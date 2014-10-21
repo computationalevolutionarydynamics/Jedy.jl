@@ -1,11 +1,11 @@
 module TestMoran
 using Optim
 using Base.Test
+using JEDy
 
 # Include our custom test handler
 include("customTestHandler.jl")
 
-include("../src/Jedy.jl")
 
 Test.with_handler(customHandler) do
 
