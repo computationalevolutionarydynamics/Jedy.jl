@@ -12,7 +12,12 @@ export Population, SymmetricGame, MoranProcess,
         fitness, reproductionProbability, moranProcessStep!,
         generateTimeSeries, generateStateHistogram, generateStateHeatmap,
         estimateStationaryDistribution, computeFixationProbability, computeTransitionMatrix,
-        computeStationaryDistribution, computeIntensityEffect
+        computeStationaryDistribution, computeIntensityEffect, replicator, replicatorMutator,
+        getTrajectory, twoStrategiesPhaseDiagram, plotThreeStrategiesPhaseDiagram,
+        plotThreeStrategiesMultiTrajectories, plotThreeStrategiesVectorField,
+        plotAgainstTime, clearSimplex
+
+
 
 # Define types
 
