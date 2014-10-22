@@ -273,6 +273,12 @@ function computeTransitionMatrix(numGroups::Int64, payoffFunction::Function, tot
     return transitionMatrix
 end
 
+function computeTransitionMatrix(process::MoranProcess)
+
+    computeTransitionMatrix(length(process.groups), process.payoffFunction, process.groups.totalPop, process.intensityOfSelection, process.intensityOfSelectionMap)
+
+end
+
 function computeStationaryDistribution(numGroups::Int64, payoffFunction::Function, totalPop::Int64, intensityOfSelection::Float64, intensityOfSelectionMap::ASCIIString)
 
     # Compute the transition matrix
