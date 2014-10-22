@@ -1,9 +1,18 @@
 module Jedy
-# Imports
 
+# Imports
 import Base.copy
+
+# Requirements
 using PyPlot
 using ODE: ode23, ode45
+
+# Exports
+export Population, SymmetricGame, MoranProcess,
+        fitness, reproductionProbability, moranProcessStep!,
+        generateTimeSeries, generateStateHistogram, generateStateHeatmap,
+        estimateStationaryDistribution, computeFixationProbability, computeTransitionMatrix,
+        computeStationaryDistribution, computeIntensityEffect
 
 # Define types
 
