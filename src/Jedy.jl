@@ -248,7 +248,7 @@ end
 
 function computeFixationProbability(process::MoranProcess, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64)
 
-    computeFixationProbability(numGroups, payoffFunction, dominantPop, mutantPop, mutantSize, totalPop, intensityOfSelection, intensityOfSelectionMap)
+    computeFixationProbability(length(process.population.groups), process.payoffFunction, dominantPop, mutantPop, mutantSize, process.population.totalPop, process.intensityOfSelection, process.intensityOfSelectionMap)
 
 end
 
@@ -275,7 +275,7 @@ end
 
 function computeTransitionMatrix(process::MoranProcess)
 
-    computeTransitionMatrix(length(process.groups), process.payoffFunction, process.groups.totalPop, process.intensityOfSelection, process.intensityOfSelectionMap)
+    computeTransitionMatrix(length(process.population.groups), process.payoffFunction, process.population.totalPop, process.intensityOfSelection, process.intensityOfSelectionMap)
 
 end
 
