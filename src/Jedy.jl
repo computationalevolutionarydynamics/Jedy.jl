@@ -246,6 +246,12 @@ function computeFixationProbability{T<:Real}(numGroups::Int64, payoffFunction::F
     return fixationProbability
 end
 
+function computeFixationProbability(process::MoranProcess, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64)
+
+    computeFixationProbability(numGroups, payoffFunction, dominantPop, mutantPop, mutantSize, totalPop, intensityOfSelection, intensityOfSelectionMap)
+
+end
+
 function computeTransitionMatrix(numGroups::Int64, payoffFunction::Function, totalPop::Int64, intensityOfSelection::Float64, intensityOfSelectionMap::ASCIIString)
 
     transitionMatrix = zeros(Float64, (numGroups,numGroups))
