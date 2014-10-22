@@ -1,4 +1,4 @@
-module JEDy
+module Jedy
 # Imports
 
 import Base.copy
