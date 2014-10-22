@@ -198,28 +198,6 @@ function generateStateHeatmap(iterations::Int64, process::MoranProcess)
     return heatmap
 end
 
-function logNormHeatmap(heatmap::Array{Int64,2})
-
-    # Takes a heatmap and normalises it logarithmically
-    # Create a new heatmap
-    newHeatmap = zeros(Float64, size(heatmap))
-    # If the value is zero, make it 1
-    for i in 1:size(heatmap,1)
-        for j in 1:size(heatmap,2)
-            if heatmap[i,j] == 0
-                newHeatmap[i,j] = 1
-            else
-                newHeatmap[i,j] = heatmap[i,j]
-            end
-        end
-    end
-
-    # Take the log of all the values
-    newHeatmap = log(newHeatmap)
-
-    return newHeatmap
-end
-
 function estimateStationaryDistribution(iterations::Int64, process::MoranProcess)
 
     stationaryDist = zeros(Int64, length(process.population.groups))
