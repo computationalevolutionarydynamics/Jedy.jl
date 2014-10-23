@@ -83,7 +83,7 @@ copy(arg::MoranProcess) = MoranProcess(copy(arg.population), arg.mutationRate, a
 
 # Fitness takes a population, a payoff function, an intensity of selection and an intensity of selection mapping and returns a vector which gives the frequency dependant fitness of each population
 
-function fitness{T<:Real}(pop::Population, payoffFunction::Function, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
+function fitness(pop::Population, payoffFunction::Function, intensityOfSelection::Float64, intensityOfSelectionMap::ASCIIString)
     if (intensityOfSelectionMap != "lin") && (intensityOfSelectionMap != "exp")
         throw(ArgumentError("Invalid intensity of selection mapping type"))
     elseif intensityOfSelectionMap == "lin"
@@ -103,12 +103,19 @@ function fitness{T<:Real}(pop::Population, payoffFunction::Function, intensityOf
     # Compute the fitness
     fitnessVector = payoffMatrix * pop.groups
     fitnessVector -= diag(payoffMatrix)
-    fitnessVector /= pop.totalPop
+    fitnessVector /= pop.totalPop - 1
     # Map the fitnessVector using the mappingFunction
     fitnessVector = mappingFunction(fitnessVector, intensityOfSelection)
 end
 
+function fitness(pop::Population, payoffFunction::Function, intensityOfSelection::Int64, intensityOfSelectionMap::ASCIIString)
+
+    fitness(pop, payoffFunction, convert(Float64,intensityOfSelection), intensityOfSelectionMap::ASCIIString)
+
+end
+
 function reproductionProbability{T<:Real}(pop::Population, payoffFunction::Function, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
+
     fitnessVector = fitness(pop, payoffFunction, intensityOfSelection, intensityOfSelectionMap)
     probVector = fitnessVector .* pop.groups
     probVector /= dot(fitnessVector,pop.groups)
@@ -205,14 +212,22 @@ end
 
 function estimateStationaryDistribution(iterations::Int64, process::MoranProcess)
 
-    stationaryDist = zeros(Int64, length(process.population.groups))
+    numGroups = length(process.population.groups)
+    stationaryDist = zeros(Int64, numGroups) 
+    totalPop = process.population.totalPop
 
     # Take a copy of the process to avoid destroying the original
     copyOfProcess = copy(process)
 
-    timeSeries = generateTimeSeries(iterations, copyOfProcess)
-    @simd for i in 1:size(timeSeries,2)
-        @inbounds stationaryDist[i] = count(i->(i==process.population.totalPop), timeSeries[:,i])
+    for _ in 1:iterations
+
+        moranProcessStep!(copyOfProcess)
+        for j in 1:numGroups
+            if copyOfProcess.population.groups[j] == totalPop
+                stationaryDist[j] += 1
+                break
+            end
+        end
     end
 
     # Divide by the number of entries
