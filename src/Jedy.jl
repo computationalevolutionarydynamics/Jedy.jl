@@ -599,7 +599,6 @@ function plotThreeStrategiesPhaseDiagram{T<:Real}(timeRange::Any, initialFrequen
         text(-0.1,-0.1,game.strategies[2], ha = "center")
         text(1.1,-0.1,game.strategies[3], ha = "center")
         text(0.5,1.0,game.strategies[1], ha = "center")
-        end
 
         #enforce the x and y ranges and remove the axes
         ylim(-0.2,1.2)
