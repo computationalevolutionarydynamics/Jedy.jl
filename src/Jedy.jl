@@ -370,7 +370,7 @@ function infinitePopulationsFitness{T<:Real}(frequency::Array{T,1}, payoffFuncti
             payoffMatrix[i,j] = payoffFunction(i,j)
         end
     end
-    return game * frequency
+    return payoffMatrix * frequency
 end
 
 function replicator{T<:Real}(timeRange::Any, frequency::Array{T,1}, payoffFunction::Function;mutationProbs = [0 0 0; 0 0 0; 0 0 0])
@@ -380,7 +380,7 @@ function replicator{T<:Real}(timeRange::Any, frequency::Array{T,1}, payoffFuncti
     ----------
     timeRange: vector of the time range
     frequency: vector of frequencies for each strategy
-    game: 2D payoff matrix
+    payoffFunction: function that can take matrix indices and return the payoff
     mutationProbs: this is not used by the function but appears for compatibility with the replicator-mutator function
 
     Returns:
@@ -416,7 +416,7 @@ function replicatorMutator{T<:Real}(timeRange::Any, frequency::Array{T,1},payoff
     ----------
     timeRange: vector of the time range. Only placed as the first argument for compatibility with ODE
     frequency: vector of frequencies for each strategy
-    game: 2D payoff matrix
+    payoffFunction: function that can take matrix indices and return the payoff
     mutationProbs:  2D mutation probability matrix
 
     Returns:
