@@ -103,7 +103,7 @@ function fitness(pop::Population, payoffFunction::Function, intensityOfSelection
     # Compute the fitness
     fitnessVector = payoffMatrix * pop.groups
     fitnessVector -= diag(payoffMatrix)
-    fitnessVector /= pop.totalPop
+    fitnessVector /= pop.totalPop - 1
     # Map the fitnessVector using the mappingFunction
     fitnessVector = mappingFunction(fitnessVector, intensityOfSelection)
 end
