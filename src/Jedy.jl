@@ -308,13 +308,13 @@ function computeStationaryDistribution(numGroups::Int64, payoffFunction::Functio
     # Loop over the eigenvalues until we find the eigenvalue 1.0
     for i in 1:length(eigObj[:values])
         if abs(eigObj[:values][i] - 1.0) < 1e-4
-            stationaryVector = eigObj[:vectors][:, i]
+            vector = eigObj[:vectors][:, i]
             break
         end
     end
 
     # Normalise the vector
-    stationaryVector /= sum(stationaryVector)
+    vector /= sum(vector)
 
 end
 
