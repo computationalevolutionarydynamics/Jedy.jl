@@ -83,7 +83,7 @@ copy(arg::MoranProcess) = MoranProcess(copy(arg.population), arg.mutationRate, a
 
 # Fitness takes a population, a payoff function, an intensity of selection and an intensity of selection mapping and returns a vector which gives the frequency dependant fitness of each population
 
-function fitness{T<:Real}(pop::Population, payoffFunction::Function, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
+function fitness(pop::Population, payoffFunction::Function, intensityOfSelection::Float64, intensityOfSelectionMap::ASCIIString)
     if (intensityOfSelectionMap != "lin") && (intensityOfSelectionMap != "exp")
         throw(ArgumentError("Invalid intensity of selection mapping type"))
     elseif intensityOfSelectionMap == "lin"
@@ -108,7 +108,14 @@ function fitness{T<:Real}(pop::Population, payoffFunction::Function, intensityOf
     fitnessVector = mappingFunction(fitnessVector, intensityOfSelection)
 end
 
+function fitness(pop::Population, payoffFunction::Function, intensityOfSelection::Int64, intensityOfSelectionMap::ASCIIString)
+
+    fitness(pop, payoffFunction, convert(Float64,intensityOfSelection), intensityOfSelectionMap::ASCIIString)
+
+end
+
 function reproductionProbability{T<:Real}(pop::Population, payoffFunction::Function, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
+
     fitnessVector = fitness(pop, payoffFunction, intensityOfSelection, intensityOfSelectionMap)
     probVector = fitnessVector .* pop.groups
     probVector /= dot(fitnessVector,pop.groups)
