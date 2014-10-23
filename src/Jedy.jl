@@ -361,7 +361,7 @@ end
 # Infinite population methods
 #######################################################
 
-function infinitePopulationsFitness(frequency::Array{T,1}, payoffFunction::Function)
+function infinitePopulationsFitness{T<:Real}(frequency::Array{T,1}, payoffFunction::Function)
     # Extract the payoff matrix using the payoffFunction
     numGroups = length(frequency)
     payoffMatrix = zeros(Float64, (numGroups, numGroups))
@@ -483,7 +483,7 @@ function getTrajectory{T<:Real}(timeRange::Any,initialFrequency::Array{T,1},game
 
 end
 
-function twoStrategiesPhaseDiagram{T<:Real}(game::SymmetricGame; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, labels = ["S1", "S2"], step = 0.001)
+function twoStrategiesPhaseDiagram(game::SymmetricGame; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, labels = ["S1", "S2"], step = 0.001)
 
     nStrategies = 2
 
@@ -600,7 +600,7 @@ function plotThreeStrategiesPhaseDiagram{T<:Real}(timeRange::Any, initialFrequen
     end
 end
 
-function plotThreeStrategiesMultiTrajectories{T<:Real}(timeRange::Any, game::SymmetricGame; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, step = 0.2,solver = ode23,labels = ["S1","S2","S3"], randomPlot = false, plots = 5)
+function plotThreeStrategiesMultiTrajectories(timeRange::Any, game::SymmetricGame; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, step = 0.2,solver = ode23,labels = ["S1","S2","S3"], randomPlot = false, plots = 5)
 
     if randomPlot == false
         #plot trajectories starting at different points, determined by the value of step
@@ -638,7 +638,7 @@ function plotThreeStrategiesMultiTrajectories{T<:Real}(timeRange::Any, game::Sym
 
 end
 
-function plotThreeStrategiesVectorField{T<:Real}(game::SymmetricGame; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0,step = 0.1,labels = ["S1","S2","S3"])
+function plotThreeStrategiesVectorField(game::SymmetricGame; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0,step = 0.1,labels = ["S1","S2","S3"])
 
     nStrategies = 3
 
