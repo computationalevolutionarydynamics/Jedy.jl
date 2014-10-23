@@ -282,7 +282,7 @@ function computeTransitionMatrix(numGroups::Int64, payoffFunction::Function, tot
         # Loop over the groups excluding the combination with itself
         for j in [1:i-1, i+1:numGroups]
 
-            transitionMatrix[i,j] = (1/2) * computeFixationProbability(numGroups, payoffFunction, i, j, 1, totalPop, intensityOfSelection, intensityOfSelectionMap)
+            transitionMatrix[i,j] = computeFixationProbability(numGroups, payoffFunction, i, j, 1, totalPop, intensityOfSelection, intensityOfSelectionMap)
 
         end
 
@@ -307,7 +307,7 @@ function computeStationaryDistribution(numGroups::Int64, payoffFunction::Functio
     eigObj = eigfact(transitionMatrix')
     # Loop over the eigenvalues until we find the eigenvalue 1.0
     for i in 1:length(eigObj[:values])
-        if abs(eigObj[:values][i] - 1.0) < 1e-4
+        if abs(eigObj[:values][i] - 1.0) < 1e-3
             vector = eigObj[:vectors][:, i]
             break
         end
