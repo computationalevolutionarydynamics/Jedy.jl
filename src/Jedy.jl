@@ -274,7 +274,7 @@ end
 
 function computeTransitionMatrix(numGroups::Int64, payoffFunction::Function, totalPop::Int64, intensityOfSelection::Float64, intensityOfSelectionMap::ASCIIString)
 
-    transitionMatrix = Array(Float64, (numGroups,numGroups))
+    transitionMatrix = zeros(Float64, (numGroups,numGroups))
 
     # Loop over the groups
     for i in 1:numGroups
