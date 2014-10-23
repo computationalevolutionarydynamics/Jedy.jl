@@ -498,7 +498,7 @@ function getTrajectory{T<:Real}(timeRange::Any,initialFrequency::Array{T,1},game
 
 end
 
-function twoStrategiesPhaseDiagram(game::SymmetricGame; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, labels = ["S1", "S2"], step = 0.001)
+function twoStrategiesPhaseDiagram(game::SymmetricGame; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, step = 0.001)
 
     nStrategies = 2
 
@@ -570,14 +570,14 @@ function twoStrategiesPhaseDiagram(game::SymmetricGame; mutationProbs = [0 0 0; 
     plot(xaxis,derivative)
 
     #show the labels of each strategy
-    text(-0.05,0,labels[2], ha = "right", va = "center")
-    text(1.05,0,labels[1], ha = "left", va = "center")
+    text(-0.05,0,game.strategies[2], ha = "right", va = "center")
+    text(1.05,0,game.strategies[1], ha = "left", va = "center")
 
     #enforce the x-range
     PyPlot.xlim(-0.2,1.2)
 end
 
-function plotThreeStrategiesPhaseDiagram{T<:Real}(timeRange::Any, initialFrequency::Array{T,1}, game::SymmetricGame; mutationProbs =  [0 0 0; 0 0 0; 0 0 0], μ = 0.0, solver = ode23, labels = ["S1", "S2","S3"], internal = false)
+function plotThreeStrategiesPhaseDiagram{T<:Real}(timeRange::Any, initialFrequency::Array{T,1}, game::SymmetricGame; mutationProbs =  [0 0 0; 0 0 0; 0 0 0], μ = 0.0, solver = ode23, internal = false)
 
     #get the trajectory
     timeTable, trajectory = getTrajectory(timeRange, initialFrequency, game, mutationProbs = mutationProbs, μ = μ, solver = solver)
@@ -596,10 +596,9 @@ function plotThreeStrategiesPhaseDiagram{T<:Real}(timeRange::Any, initialFrequen
 
     if internal == false
         #show the labels of each strategy
-        if labels != ["","",""]
-            text(-0.1,-0.1,labels[2], ha = "center")
-            text(1.1,-0.1,labels[3], ha = "center")
-            text(0.5,1.0,labels[1], ha = "center")
+        text(-0.1,-0.1,game.strategies[2], ha = "center")
+        text(1.1,-0.1,game.strategies[3], ha = "center")
+        text(0.5,1.0,game.strategies[1], ha = "center")
         end
 
         #enforce the x and y ranges and remove the axes
@@ -615,14 +614,14 @@ function plotThreeStrategiesPhaseDiagram{T<:Real}(timeRange::Any, initialFrequen
     end
 end
 
-function plotThreeStrategiesMultiTrajectories(timeRange::Any, game::SymmetricGame; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, step = 0.2,solver = ode23,labels = ["S1","S2","S3"], randomPlot = false, plots = 5)
+function plotThreeStrategiesMultiTrajectories(timeRange::Any, game::SymmetricGame; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, step = 0.2,solver = ode23, randomPlot = false, plots = 5)
 
     if randomPlot == false
         #plot trajectories starting at different points, determined by the value of step
         for i = 0.0:step:1.0
             for j = 0.0:step:(1-i)
                 initialFrequency = [i; j; 1-i-j]
-                plotThreeStrategiesPhaseDiagram(timeRange,initialFrequency,game,mutationProbs = mutationProbs, μ = μ, labels = ["","",""], internal = true)
+                plotThreeStrategiesPhaseDiagram(timeRange,initialFrequency,game,mutationProbs = mutationProbs, μ = μ, internal = true)
             end
         end
     else
@@ -631,14 +630,14 @@ function plotThreeStrategiesMultiTrajectories(timeRange::Any, game::SymmetricGam
             j = rand()
             k = rand()*(1-j)
             initialFrequency = [j; k; 1-j-k]
-            plotThreeStrategiesPhaseDiagram(timeRange,initialFrequency,game,mutationProbs = mutationProbs, μ = μ, labels = ["","",""], internal = true)
+            plotThreeStrategiesPhaseDiagram(timeRange,initialFrequency,game,mutationProbs = mutationProbs, μ = μ, internal = true)
         end
     end
 
     #show the labels of each strategy
-    text(-0.1,-0.1,labels[2],ha = "center")
-    text(1.1,-0.1,labels[3],ha = "center")
-    text(0.5,1.0,labels[1],ha = "center")
+    text(-0.1,-0.1,game.strategies[2],ha = "center")
+    text(1.1,-0.1,game.strategies[3],ha = "center")
+    text(0.5,1.0,game.strategies[1],ha = "center")
 
     #enforce the x and y ranges and remove the axes
     ylim(-0.2,1.2)
@@ -653,7 +652,7 @@ function plotThreeStrategiesMultiTrajectories(timeRange::Any, game::SymmetricGam
 
 end
 
-function plotThreeStrategiesVectorField(game::SymmetricGame; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0,step = 0.1,labels = ["S1","S2","S3"])
+function plotThreeStrategiesVectorField(game::SymmetricGame; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0,step = 0.1)
 
     nStrategies = 3
 
@@ -695,9 +694,9 @@ function plotThreeStrategiesVectorField(game::SymmetricGame; mutationProbs = [0 
     quiver(positionsCart[:,1],positionsCart[:,2],vectorsCart[:,1],vectorsCart[:,2])
 
     #show the labels of each strategy
-    text(-0.1,-0.1,labels[2],ha = "center")
-    text(1.1,-0.1,labels[3],ha = "center")
-    text(0.5,1.0,labels[1],ha = "center")
+    text(-0.1,-0.1,game.strategies[2],ha = "center")
+    text(1.1,-0.1,game.strategies[3],ha = "center")
+    text(0.5,1.0,game.strategies[1],ha = "center")
 
     #enforce the x and y ranges
     ylim(-0.2,1.2)
@@ -712,21 +711,16 @@ function plotThreeStrategiesVectorField(game::SymmetricGame; mutationProbs = [0 
 
 end
 
-function plotAgainstTime{T<:Real}(timeRange::Any, initialFrequency::Array{T,1}, game::SymmetricGame;labels = ["S1"], mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, solver = ode23)
+function plotAgainstTime{T<:Real}(timeRange::Any, initialFrequency::Array{T,1}, game::SymmetricGame; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, solver = ode23)
 
     nStrategies = length(initialFrequency)
 
     #get the frequencies of each strategy and the table of time steps taken
     timeTable, trajectory = getTrajectory(timeRange, initialFrequency, game, mutationProbs = mutationProbs, μ = μ, solver = solver)
 
-    #make more labels if you don't have enough
-    for i = length(labels):nStrategies
-        labels = vcat(labels,["S$(i+1)"])
-    end
-
     #plot each frequency against time
     for i = 1:nStrategies
-        plot(timeTable,trajectory[:,i], label = labels[i])
+        plot(timeTable,trajectory[:,i], label = game.strategies[i])
     end
 
     #show the legend
