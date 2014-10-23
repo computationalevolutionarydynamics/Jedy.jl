@@ -94,7 +94,7 @@ function fitness(pop::Population, payoffFunction::Function, intensityOfSelection
 
     # Extract the payoff matrix using the payoffFunction
     numGroups = length(pop.groups)
-    payoffMatrix = zeros(Float64, (numGroups, numGroups))
+    payoffMatrix = Array(Float64, (numGroups, numGroups))
     for i in 1:length(pop.groups)
         for j = 1:length(pop.groups)
             payoffMatrix[i,j] = payoffFunction(i,j)
@@ -157,7 +157,7 @@ end
 function generateTimeSeries(iterations::Int64, process::MoranProcess)
 
     # Set up a variable to hold the time series
-    timeSeries = zeros(Float64, (iterations, length(process.population.groups)))
+    timeSeries = Array(Float64, (iterations, length(process.population.groups)))
 
     for i = 1:iterations
         moranProcessStep!(process)
@@ -236,7 +236,7 @@ end
 
 function computeFixationProbability{T<:Real}(numGroups::Int64, payoffFunction::Function, dominantPop::Int64, mutantPop::Int64, mutantSize::Int64, totalPopSize::Int64, intensityOfSelection::T, intensityOfSelectionMap::ASCIIString)
 
-    gamma = zeros(Float64, totalPopSize - 1)
+    gamma = Array(Float64, totalPopSize - 1)
 
     # Loop over all the pop sizes
     for k = 1:totalPopSize - 1
@@ -274,7 +274,7 @@ end
 
 function computeTransitionMatrix(numGroups::Int64, payoffFunction::Function, totalPop::Int64, intensityOfSelection::Float64, intensityOfSelectionMap::ASCIIString)
 
-    transitionMatrix = zeros(Float64, (numGroups,numGroups))
+    transitionMatrix = Array(Float64, (numGroups,numGroups))
 
     # Loop over the groups
     for i in 1:numGroups
