@@ -212,16 +212,22 @@ end
 
 function estimateStationaryDistribution(iterations::Int64, process::MoranProcess)
 
-    stationaryDist = zeros(Int64, length(process.population.groups))
+    numGroups = length(process.population.groups)
+    stationaryDist = zeros(Int64, numGroups) 
     totalPop = process.population.totalPop
 
     # Take a copy of the process to avoid destroying the original
     copyOfProcess = copy(process)
 
-    timeSeries = generateTimeSeries(iterations, copyOfProcess)
-    for i in 1:size(timeSeries,2)
-        @simd for j in 1:size(timeSeries,1)
-            @inbounds stationaryDist[i] += (timeSeries[i,j] == totalPop)
+    for _ in 1:iterations
+
+        moranProcessStep!(copyOfProcess)
+        for j in 1:numGroups
+            if copyOfProcess.population.groups[j] == totalPop
+                stationaryDist[j] += 1
+                break
+            end
+        end
     end
 
     # Divide by the number of entries
