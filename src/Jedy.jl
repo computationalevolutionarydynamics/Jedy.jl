@@ -361,7 +361,19 @@ end
 # Infinite population methods
 #######################################################
 
-function replicator{T<:Real}(timeRange::Any, frequency::Array{T,1}, game::Array{T,2};mutationProbs = [0 0 0; 0 0 0; 0 0 0])
+function infinitePopulationsFitness(frequency::Array{T,1}, payoffFunction::Function)
+    # Extract the payoff matrix using the payoffFunction
+    numGroups = length(frequency)
+    payoffMatrix = zeros(Float64, (numGroups, numGroups))
+    for i in 1:numGroups
+        for j = 1:numGroups
+            payoffMatrix[i,j] = payoffFunction(i,j)
+        end
+    end
+    return game * frequency
+end
+
+function replicator{T<:Real}(timeRange::Any, frequency::Array{T,1}, payoffFunction::Function;mutationProbs = [0 0 0; 0 0 0; 0 0 0])
 
     """
     Parameters
@@ -374,7 +386,7 @@ function replicator{T<:Real}(timeRange::Any, frequency::Array{T,1}, game::Array{
     Returns:
     vector of dfrequency/dt
     """
-    fitness = game * frequency
+    fitness = infinitePopulationsFitness(frequency, payoffFunction)
     averageFitness = dot(frequency, fitness)
     #if a rounding error has put the trajectory out of bounds, stop the trajectory.
     #note: I suspect there is a way to stop the ODE integrator when the output of this
@@ -398,7 +410,7 @@ end
 
 
 
-function replicatorMutator{T<:Real}(timeRange::Any, frequency::Array{T,1},game::Array{T,2}; mutationProbs = [0 0 0; 0 0 0; 0 0 0])
+function replicatorMutator{T<:Real}(timeRange::Any, frequency::Array{T,1},payoffFunction::Function; mutationProbs = [0 0 0; 0 0 0; 0 0 0])
     """
     Parameters
     ----------
@@ -411,7 +423,7 @@ function replicatorMutator{T<:Real}(timeRange::Any, frequency::Array{T,1},game::
     vector of dfrequency/dt
     """
 
-    fitness = game * frequency
+    fitness = infinitePopulationsFitness(frequency, payoffFunction)
 
     averageFitness = dot(frequency, fitness)
 
@@ -437,7 +449,7 @@ function considerMutation{T<:Real}(mutationProbs::Array{T,2}, μ::Float64, nStra
     return false, replicator
 end
 
-function getTrajectory{T<:Real}(timeRange::Any,initialFrequency::Array{T,1},game::Array{T,2};mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0,solver = ode23)
+function getTrajectory{T<:Real}(timeRange::Any,initialFrequency::Array{T,1},game::SymmetricGame;mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0,solver = ode23)
     """
     Parameters
     ----------
@@ -459,7 +471,7 @@ function getTrajectory{T<:Real}(timeRange::Any,initialFrequency::Array{T,1},game
     mutationProbs, evoFunction = considerMutation(mutationProbs, μ, nStrategies)
 
     #get table of frequencies i.e. the trajectory
-    timeTable, trajectory = solver((timeRange,initialFrequency) -> evoFunction(timeRange,initialFrequency,game,mutationProbs = mutationProbs), initialFrequency, timeRange)
+    timeTable, trajectory = solver((timeRange,initialFrequency) -> evoFunction(timeRange,initialFrequency,game.payoffFunction,mutationProbs = mutationProbs), initialFrequency, timeRange)
 
     #number of steps used in the ODE solver
     steps = size(trajectory,1)
@@ -471,7 +483,7 @@ function getTrajectory{T<:Real}(timeRange::Any,initialFrequency::Array{T,1},game
 
 end
 
-function twoStrategiesPhaseDiagram{T<:Real}(game::Array{T,2}; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, labels = ["S1", "S2"], step = 0.001)
+function twoStrategiesPhaseDiagram{T<:Real}(game::SymmetricGame; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, labels = ["S1", "S2"], step = 0.001)
 
     nStrategies = 2
 
@@ -497,7 +509,7 @@ function twoStrategiesPhaseDiagram{T<:Real}(game::Array{T,2}; mutationProbs = [0
         frequency = [i,1-i]
 
         #evoFunction will return a vector of both strategies' frequencies and we select the first one and store it
-        derivative[j] = evoFunction(false, frequency, game, mutationProbs = mutationProbs)[1]
+        derivative[j] = evoFunction(false, frequency, game.payoffFunction, mutationProbs = mutationProbs)[1]
 
         #check whether there is a critical point and whether it is stable or unstable
         if j > 2 && j < length(derivative)
@@ -550,7 +562,7 @@ function twoStrategiesPhaseDiagram{T<:Real}(game::Array{T,2}; mutationProbs = [0
     PyPlot.xlim(-0.2,1.2)
 end
 
-function plotThreeStrategiesPhaseDiagram{T<:Real}(timeRange::Any, initialFrequency::Array{T,1}, game::Array{T,2}; mutationProbs =  [0 0 0; 0 0 0; 0 0 0], μ = 0.0, solver = ode23, labels = ["S1", "S2","S3"], internal = false)
+function plotThreeStrategiesPhaseDiagram{T<:Real}(timeRange::Any, initialFrequency::Array{T,1}, game::SymmetricGame; mutationProbs =  [0 0 0; 0 0 0; 0 0 0], μ = 0.0, solver = ode23, labels = ["S1", "S2","S3"], internal = false)
 
     #get the trajectory
     timeTable, trajectory = getTrajectory(timeRange, initialFrequency, game, mutationProbs = mutationProbs, μ = μ, solver = solver)
@@ -588,7 +600,7 @@ function plotThreeStrategiesPhaseDiagram{T<:Real}(timeRange::Any, initialFrequen
     end
 end
 
-function plotThreeStrategiesMultiTrajectories{T<:Real}(timeRange::Any, game::Array{T,2}; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, step = 0.2,solver = ode23,labels = ["S1","S2","S3"], randomPlot = false, plots = 5)
+function plotThreeStrategiesMultiTrajectories{T<:Real}(timeRange::Any, game::SymmetricGame; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, step = 0.2,solver = ode23,labels = ["S1","S2","S3"], randomPlot = false, plots = 5)
 
     if randomPlot == false
         #plot trajectories starting at different points, determined by the value of step
@@ -626,9 +638,9 @@ function plotThreeStrategiesMultiTrajectories{T<:Real}(timeRange::Any, game::Arr
 
 end
 
-function plotThreeStrategiesVectorField{T<:Real}(game::Array{T,2}; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0,step = 0.1,labels = ["S1","S2","S3"])
+function plotThreeStrategiesVectorField{T<:Real}(game::SymmetricGame; mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0,step = 0.1,labels = ["S1","S2","S3"])
 
-    nStrategies = size(game,1)
+    nStrategies = 3
 
     #determine whether the replicator-mutator or replicator will be used and whether a mutationProbs matrix needs to be constructed
     mutationProbs, evoFunction = considerMutation(mutationProbs, μ, nStrategies)
@@ -643,7 +655,7 @@ function plotThreeStrategiesVectorField{T<:Real}(game::Array{T,2}; mutationProbs
 
             frequency = [i; j; 1-i-j]
             #get X dot
-            frequencyDot = evoFunction([0,0], frequency,game,mutationProbs = mutationProbs)
+            frequencyDot = evoFunction([0,0], frequency,game.payoffFunction,mutationProbs = mutationProbs)
 
             vectors[k,1] = frequencyDot[3]
             vectors[k,2] = frequencyDot[1]
@@ -685,7 +697,7 @@ function plotThreeStrategiesVectorField{T<:Real}(game::Array{T,2}; mutationProbs
 
 end
 
-function plotAgainstTime{T<:Real}(timeRange::Any, initialFrequency::Array{T,1}, game::Array{T,2};labels = ["S1"], mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, solver = ode23)
+function plotAgainstTime{T<:Real}(timeRange::Any, initialFrequency::Array{T,1}, game::SymmetricGame;labels = ["S1"], mutationProbs = [0 0 0; 0 0 0; 0 0 0], μ = 0.0, solver = ode23)
 
     nStrategies = length(initialFrequency)
 
